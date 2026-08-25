@@ -1,0 +1,40 @@
+# BetterLeak Sensitive Data Security & Secret Scanner Rules
+# Scans all commits, pull requests, and workspace files for accidental leaks.
+
+[betterleak]
+version = "1.0"
+name = "KobeanAudio"
+scan_history = true
+redact_leaks = true
+fail_on_leak = true
+
+[ignore]
+paths = [
+  ".git",
+  ".next",
+  "apps/web/.next",
+  "node_modules",
+  ".venv",
+  "apps/api/.venv",
+  "audio_output",
+  "apps/api/audio_output",
+  "apps/desktop/src-tauri/target",
+  ".env.example",
+  "pnpm-lock.yaml",
+  "Cargo.lock"
+]
+
+[rules]
+detect_gemini_api_key = true
+detect_openai_key = true
+detect_huggingface_token = true
+detect_github_pat = true
+detect_aws_credentials = true
+detect_private_keys = true
+detect_jwt_tokens = true
+detect_sqlite_db_blobs = true
+
+[custom_patterns]
+gemini_key = "(?i)(GEMINI_API_KEY|GOOGLE_API_KEY)\\s*=\\s*['\"]?[A-Za-z0-9_.-]{30,}['\"]?"
+anthropic_key = "sk-ant-[a-zA-Z0-9_-]{32,}"
+huggingface_token = "hf_[a-zA-Z0-9]{34,}"
