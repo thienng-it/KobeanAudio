@@ -3,8 +3,15 @@ from httpx import ASGITransport, AsyncClient
 import struct
 
 from main import app
+from db.database import init_db
 from engines.wav_utils import convert_pcm_to_wav, parse_audio_mime_type
 from domain.services.audio_processor import AudioProcessor
+
+
+@pytest.fixture(autouse=True)
+async def setup_database():
+    await init_db()
+
 
 
 def test_parse_audio_mime_type():
