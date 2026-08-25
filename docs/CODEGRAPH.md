@@ -129,7 +129,7 @@ graph TD
 | **Store** | `themeStore.ts` | `useThemeStore` | DOM `data-theme` | `TopNav`, `globals.css` |
 | **UI** | `TextEditor.tsx` | `TextEditor` | `useProjectStore`, `useTagStore`| `StudioPage` |
 | **UI** | `AudioPlayer.tsx` | `AudioPlayer` | `wavesurfer.js`, `usePlayerStore`| `StudioPage` |
-| **UI** | `AudioTrimDialog.tsx` | `AudioTrimDialog` | `wavesurfer.js`, `export.py` | `StudioPage`, `AudioPlayer` |
+| **UI** | `AudioTrimDialog.tsx` | `AudioTrimDialog` | `wavesurfer.js`, `export.py` | `StudioPage`, `AudioPlayer` (Direct DAW Waveform Trimming, In/Out drag handles, auto-snap silence) |
 | **UI** | `ExportDialog.tsx` | `ExportDialog` | `api.ts`, `useAudioFilesStore` | `StudioPage`, `AudioPlayer` |
 | **UI** | `TagsManagerPage.tsx`| `TagsManagerPage` | `useTagStore`, `motion.ts`, `api.ts` | `StudioPage` |
 | **UI** | `TagInsertionDialog.tsx`| `TagInsertionDialog` | `useProjectStore`, `motion.ts` | `TagsManagerPage`, `TextEditor` |

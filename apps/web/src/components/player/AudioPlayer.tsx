@@ -259,7 +259,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </button>
 
         {/* Waveform Display Container */}
-        <div className="relative flex-1 h-13 rounded-2xl bg-black/25 border border-white/[0.08] px-3 flex items-center shadow-inner overflow-hidden">
+        <div
+          onDoubleClick={() => {
+            if (audioUrl && onOpenTrim) onOpenTrim();
+          }}
+          title={audioUrl ? "Click to seek · Double-click to open Direct Waveform Trimmer" : undefined}
+          className="relative flex-1 h-13 rounded-2xl bg-black/25 border border-white/[0.08] px-3 flex items-center shadow-inner overflow-hidden cursor-pointer"
+        >
           <div ref={containerRef} className="w-full relative z-10" />
 
           {/* Idle Placeholder */}
