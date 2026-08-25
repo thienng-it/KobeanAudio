@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/tooling/cli/schema.json",
+  "productName": "KobeanAudio",
+  "version": "0.1.0",
+  "identifier": "com.kobeanaudio.studio",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @kobeanaudio/web dev",
+    "devUrl": "http://localhost:3001",
+    "beforeBuildCommand": "pnpm --filter @kobeanaudio/web build",
+    "frontendDist": "../web/out"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "KobeanAudio Studio",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

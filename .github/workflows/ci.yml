@@ -1,0 +1,53 @@
+name: KobeanAudio CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-test:
+    name: Backend Pytest & Lint
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          cd apps/api
+          python -m pip install --upgrade pip
+          pip install fastapi uvicorn pydantic pydantic-settings aiosqlite pydub soundfile google-genai httpx sse-starlette pytest pytest-asyncio
+
+      - name: Run Backend Tests
+        run: |
+          cd apps/api
+          pytest
+
+  frontend-check:
+    name: Frontend Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck shared types
+        run: pnpm --filter @kobeanaudio/types typecheck

@@ -1,0 +1,66 @@
+# Node / Next.js
+node_modules
+.next
+out
+build
+dist
+.turbo
+
+# Python / uv
+__pycache__
+*.py[cod]
+*$py.class
+.venv
+venv
+ENV
+env
+.pytest_cache
+.ruff_cache
+*.egg-info
+.coverage
+htmlcov
+
+# Rust / Tauri
+src-tauri/target
+apps/desktop/src-tauri/target
+*.bundle
+
+# Models & Audio Assets
+models/
+models/*
+!models/.gitkeep
+audio_output/
+audio_output/*
+!audio_output/.gitkeep
+**/audio_output/*
+!**/audio_output/.gitkeep
+temp_audio/
+temp_audio/*
+!temp_audio/.gitkeep
+**/temp_audio/*
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+
+# SQLite Databases
+*.sqlite
+*.sqlite3
+*.db
+apps/api/*.db
+
+# Environment Variables & Keys
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# OS Specific
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace

@@ -1,0 +1,20 @@
+{
+  "name": "kobeanaudio-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "dev:web": "pnpm --filter @kobeanaudio/web dev",
+    "dev:api": "cd apps/api && python3 -m uvicorn main:app --reload --reload-exclude '.venv*' --port 8000",
+    "dev:desktop": "bash scripts/desktop.sh",
+    "desktop": "bash scripts/desktop.sh",
+    "tauri": "pnpm --filter @kobeanaudio/desktop tauri",
+    "build": "pnpm --filter @kobeanaudio/web build",
+    "lint": "pnpm --filter @kobeanaudio/web lint && cd apps/api && uv run ruff check .",
+    "test": "pnpm --filter @kobeanaudio/web test && cd apps/api && source .venv/bin/activate && python3 -m pytest"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.3"
+  }
+}
