@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { BUILTIN_TAGS, TagCategory, TagItem } from "@/lib/tagDefinitions";
+import { BUILTIN_TAGS, TagCategory, TagItem } from "../lib/tagDefinitions";
 import { useProjectStore } from "./projectStore";
 
 export type StudioTag = TagItem;

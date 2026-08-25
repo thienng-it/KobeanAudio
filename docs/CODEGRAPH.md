@@ -131,7 +131,9 @@ graph TD
 | **UI** | `AudioPlayer.tsx` | `AudioPlayer` | `wavesurfer.js`, `usePlayerStore`| `StudioPage` |
 | **UI** | `AudioTrimDialog.tsx` | `AudioTrimDialog` | `wavesurfer.js`, `export.py` | `StudioPage`, `AudioPlayer` |
 | **UI** | `ExportDialog.tsx` | `ExportDialog` | `api.ts`, `useAudioFilesStore` | `StudioPage`, `AudioPlayer` |
-| **UI** | `TagsManagerPage.tsx`| `TagsManagerPage` | `useTagStore`, `motion.ts` | `StudioPage` |
+| **UI** | `TagsManagerPage.tsx`| `TagsManagerPage` | `useTagStore`, `motion.ts`, `api.ts` | `StudioPage` |
+| **UI** | `TagInsertionDialog.tsx`| `TagInsertionDialog` | `useProjectStore`, `motion.ts` | `TagsManagerPage`, `TextEditor` |
+| **UI** | `PlaygroundApplyDialog.tsx`| `PlaygroundApplyDialog`| `useProjectStore`, `motion.ts` | `TagsManagerPage` |
 | **UI** | `AudioFilesSidebar.tsx`| `AudioFilesSidebar` | `useAudioFilesStore` | `StudioPage` |
 
 ---

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tag as TagIcon,
@@ -19,9 +19,16 @@ import {
   X,
   ChevronDown,
   Filter,
+  Play,
+  Pause,
+  Volume2,
+  RefreshCw,
 } from "lucide-react";
 import { useTagStore, CustomTag, StudioTag, TagCategory } from "@/stores/tagStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { generateAudio } from "@/lib/api";
+import { TagInsertionDialog } from "@/components/tags/TagInsertionDialog";
+import { PlaygroundApplyDialog } from "@/components/tags/PlaygroundApplyDialog";
 import {
   dropdownMotion,
   buttonTapMotion,
@@ -56,16 +63,39 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
     importCustomTags,
   } = useTagStore();
 
-  const { textContent, setTextContent } = useProjectStore();
+  const { textContent } = useProjectStore();
 
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [insertedId, setInsertedId] = useState<string | null>(null);
   const [playgroundText, setPlaygroundText] = useState(
     "[reading] [title] KobeanAudio Neural Studio [warm, celebratory] [pause: 1.0s]\n<laugh> Experience effortless control over 200+ director notes and expressive voice tags."
   );
   const [importNotice, setImportNotice] = useState<string | null>(null);
+
+  // Smart Tag Insertion State
+  const [selectedInsertTag, setSelectedInsertTag] = useState<StudioTag | null>(null);
+  const [insertModalOpen, setInsertModalOpen] = useState(false);
+  const [playgroundApplyModalOpen, setPlaygroundApplyModalOpen] = useState(false);
+
+  // Audio Auditioning Player State
+  const [playingTagId, setPlayingTagId] = useState<string | null>(null);
+  const [loadingTagId, setLoadingTagId] = useState<string | null>(null);
+  const audioCache = useRef<Record<string, string>>({});
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Clean up audio on unmount
+  useEffect(() => {
+    return () => {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   // New Custom Tag Form State
   const [newTagName, setNewTagName] = useState("");
@@ -108,19 +138,89 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
     setTimeout(() => setCopiedId(null), 1800);
   };
 
-  const handleInsertTag = (tag: StudioTag) => {
-    setTextContent(textContent ? `${textContent} ${tag.syntax} ` : `${tag.syntax} `);
-    setInsertedId(tag.id);
-    setTimeout(() => setInsertedId(null), 1800);
+  const handleOpenInsertModal = (tag: StudioTag) => {
+    setSelectedInsertTag(tag);
+    setInsertModalOpen(true);
+  };
+
+  const handleAuditionTag = async (tag: StudioTag) => {
+    if (playingTagId === tag.id) {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setPlayingTagId(null);
+      return;
+    }
+
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    const sampleSnippet = tag.exampleSnippet || `${tag.syntax} Experience effortless speech nuance in KobeanAudio.`;
+
+    // Check cached audio URL
+    if (audioCache.current[tag.id]) {
+      const audio = new Audio(audioCache.current[tag.id]);
+      currentAudioRef.current = audio;
+      audio.onended = () => setPlayingTagId(null);
+      audio.onerror = () => setPlayingTagId(null);
+      setPlayingTagId(tag.id);
+      audio.play().catch(() => setPlayingTagId(null));
+      return;
+    }
+
+    // Synthesize sample preview
+    try {
+      setLoadingTagId(tag.id);
+      const res = await generateAudio({
+        text: sampleSnippet,
+        engine: "kokoro",
+        voiceId: "af_heart",
+        outputFormat: "wav",
+      });
+
+      if (res && res.audio_url) {
+        const fullUrl = res.audio_url.startsWith("http")
+          ? res.audio_url
+          : `http://127.0.0.1:8000${res.audio_url}`;
+        audioCache.current[tag.id] = fullUrl;
+
+        const audio = new Audio(fullUrl);
+        currentAudioRef.current = audio;
+        audio.onended = () => setPlayingTagId(null);
+        audio.onerror = () => setPlayingTagId(null);
+        setLoadingTagId(null);
+        setPlayingTagId(tag.id);
+        audio.play().catch(() => setPlayingTagId(null));
+      } else {
+        throw new Error("No audio URL returned from engine");
+      }
+    } catch (err) {
+      console.warn("TTS backend audition error, using Web Speech fallback:", err);
+      setLoadingTagId(null);
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        const clean = sampleSnippet.replace(/\[[^\]]*\]/g, "").replace(/<[^>]*>/g, "").trim() || tag.name;
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.rate = 1.0;
+        utter.onend = () => setPlayingTagId(null);
+        utter.onerror = () => setPlayingTagId(null);
+        setPlayingTagId(tag.id);
+        window.speechSynthesis.speak(utter);
+      } else {
+        setPlayingTagId(null);
+      }
+    }
   };
 
   const handleInsertIntoPlayground = (syntax: string) => {
     setPlaygroundText((prev) => (prev ? `${prev} ${syntax} ` : `${syntax} `));
-  };
-
-  const handleSendPlaygroundToStudio = () => {
-    setTextContent(playgroundText);
-    if (onNavigateToStudio) onNavigateToStudio();
   };
 
   const handleCreateCustomTag = (e: React.FormEvent) => {
@@ -149,12 +249,12 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
   };
 
   const handleExport = () => {
-    const jsonStr = exportCustomTags();
-    const blob = new Blob([jsonStr], { type: "application/json" });
+    const dataStr = exportCustomTags();
+    const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `kobeanaudio_custom_tags_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `kobeanaudio-tags-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -162,17 +262,16 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const res = importCustomTags(content);
-      if (res.success) {
-        setImportNotice(`Successfully imported ${res.count} custom tags.`);
-        setTimeout(() => setImportNotice(null), 3500);
-      } else {
-        setImportNotice(`Failed to import tags: ${res.error}`);
-        setTimeout(() => setImportNotice(null), 3500);
+      try {
+        const text = event.target?.result as string;
+        const count = importCustomTags(text);
+        setImportNotice(`Successfully imported ${count} custom tags!`);
+        setTimeout(() => setImportNotice(null), 3000);
+      } catch (err) {
+        setImportNotice("Failed to import tags: invalid JSON file format.");
+        setTimeout(() => setImportNotice(null), 3000);
       }
     };
     reader.readAsText(file);
@@ -209,7 +308,7 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
                 </span>
               </div>
               <p className="text-[11px] text-[var(--text-muted)]">
-                Click any tag to copy syntax or insert directly into dialogue blocks.
+                Audition audio samples, copy syntax, or insert tags into specific dialogue locations.
               </p>
             </div>
           </div>
@@ -281,31 +380,21 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
             )}
           </div>
 
-          {/* Clean Category Dropdown Selector */}
-          <div className="relative shrink-0">
-            <button
+          {/* Category Selector Dropdown Popover */}
+          <div className="relative">
+            <motion.button
+              {...buttonSubtleTapMotion}
               onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
               className="flex items-center space-x-2 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface-elevated)] px-3 py-1.5 text-xs text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-[var(--accent-primary)] cursor-pointer"
             >
-              <span className="text-sm">{selectedCategoryItem.icon}</span>
+              <span>{selectedCategoryItem.icon}</span>
               <span className="font-semibold">{selectedCategoryItem.label}</span>
-              <span
-                className="rounded-full px-1.5 py-0.2 text-[9px] font-mono border border-[var(--glass-border)]"
-                style={{
-                  backgroundColor: "var(--accent-glow)",
-                  color: "var(--accent-primary)",
-                }}
-              >
+              <span className="rounded-full bg-black/10 dark:bg-white/10 px-1.5 py-0.2 text-[9px] font-mono text-[var(--text-faint)]">
                 {selectedCategoryCount}
               </span>
-              <ChevronDown
-                className={`h-3.5 w-3.5 text-[var(--text-faint)] transition duration-200 ${
-                  categoryDropdownOpen ? "rotate-180 text-[var(--accent-primary)]" : ""
-                }`}
-              />
-            </button>
+              <ChevronDown className="h-3 w-3 text-[var(--text-faint)]" />
+            </motion.button>
 
-            {/* Dropdown Floating Popover */}
             <AnimatePresence>
               {categoryDropdownOpen && (
                 <>
@@ -315,12 +404,12 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
                   />
                   <motion.div
                     {...dropdownMotion}
-                    className="glass-popover absolute left-0 top-full mt-1.5 w-64 rounded-2xl p-1.5 z-50 text-[var(--text-main)]"
+                    className="glass-popover absolute left-0 top-full mt-1.5 w-60 rounded-2xl p-1.5 z-50 text-[var(--text-main)]"
                   >
-                    <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
-                      Filter by Category
+                    <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)] border-b border-[var(--glass-border)] mb-1">
+                      Filter by Tag Category
                     </div>
-                    <div className="space-y-0.5 max-h-60 overflow-y-auto">
+                    <div className="space-y-0.5">
                       {CATEGORIES.map((cat) => {
                         const isSelected = selectedCategory === cat.id;
                         const count =
@@ -380,17 +469,18 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
               {filteredTags.map((tag) => {
                 const isCopied = copiedId === tag.id;
-                const isInserted = insertedId === tag.id;
+                const isPlaying = playingTagId === tag.id;
+                const isLoading = loadingTagId === tag.id;
 
                 return (
                   <motion.div
                     key={tag.id}
                     layout
                     whileHover={{ scale: 1.01 }}
-                    className="group relative flex flex-col justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface)] p-3.5 shadow-sm backdrop-blur-xl transition hover:border-[var(--glass-border-highlight)] hover:bg-[var(--bg-surface-elevated)]"
+                    className="group relative flex flex-col justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface)] p-4 shadow-sm backdrop-blur-xl transition hover:border-[var(--glass-border-highlight)] hover:bg-[var(--bg-surface-elevated)]"
                   >
                     <div>
                       {/* Card Header: Syntax Pill + Category */}
@@ -408,7 +498,7 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
                             borderColor: "var(--accent-primary)",
                             color: "var(--accent-primary)",
                           }}
-                          title="Click to copy, or drag into dialogue"
+                          title="Click to copy syntax, or drag directly into script"
                         >
                           <GripVertical className="h-3 w-3 opacity-50" />
                           <code>{tag.syntax}</code>
@@ -429,30 +519,50 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
 
                       {/* Inline Quote Snippet */}
                       {tag.exampleSnippet && (
-                        <div className="mt-2 rounded-lg bg-black/5 dark:bg-black/25 px-2 py-1 font-mono text-[10px] text-[var(--text-muted)] truncate border border-[var(--glass-border)]">
-                          <span className="text-[var(--text-faint)] select-none mr-1">“</span>
-                          {tag.exampleSnippet}
-                          <span className="text-[var(--text-faint)] select-none ml-1">”</span>
+                        <div className="mt-2.5 rounded-xl bg-black/5 dark:bg-black/25 px-2.5 py-1.5 font-mono text-[10px] text-[var(--text-muted)] truncate border border-[var(--glass-border)] flex items-center justify-between">
+                          <span className="truncate">
+                            <span className="text-[var(--text-faint)] select-none mr-1">“</span>
+                            {tag.exampleSnippet}
+                            <span className="text-[var(--text-faint)] select-none ml-1">”</span>
+                          </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Card Footer: Quick Actions */}
-                    <div className="mt-3 flex items-center justify-between border-t border-[var(--glass-border)] pt-2.5">
-                      {/* Compatible Engines Indicators */}
-                      <div className="flex items-center space-x-1">
-                        {tag.engines.slice(0, 3).map((eng) => (
-                          <span
-                            key={eng}
-                            className="rounded bg-black/5 dark:bg-white/5 px-1 py-0.2 text-[8px] font-mono uppercase text-[var(--text-faint)]"
-                            title={`Compatible with ${eng}`}
-                          >
-                            {eng === "gemini" ? "Gemini" : eng}
-                          </span>
-                        ))}
-                      </div>
+                    {/* Card Footer: Audio Audition + Quick Actions */}
+                    <div className="mt-3.5 flex items-center justify-between border-t border-[var(--glass-border)] pt-2.5">
+                      {/* Left: Audio Audition Hear Button */}
+                      <button
+                        onClick={() => handleAuditionTag(tag)}
+                        disabled={isLoading}
+                        className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold border shadow-sm transition cursor-pointer ${
+                          isPlaying
+                            ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-400"
+                            : "border-[var(--glass-border)] bg-black/5 dark:bg-white/[0.04] text-[var(--text-main)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+                        }`}
+                        title={isPlaying ? "Pause audio audition" : "Hear audio sample for this tag"}
+                      >
+                        {isLoading ? (
+                          <RefreshCw className="h-3 w-3 animate-spin text-[var(--accent-primary)]" />
+                        ) : isPlaying ? (
+                          <>
+                            <Pause className="h-3 w-3" />
+                            <span className="text-[11px]">Playing</span>
+                            <span className="flex space-x-0.5 items-center ml-0.5">
+                              <span className="h-2 w-0.5 bg-emerald-400 animate-pulse" />
+                              <span className="h-3 w-0.5 bg-emerald-400 animate-pulse delay-75" />
+                              <span className="h-1.5 w-0.5 bg-emerald-400 animate-pulse delay-150" />
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-3 w-3 ml-0.5" style={{ color: "var(--accent-primary)" }} />
+                            <span className="text-[11px]">Hear</span>
+                          </>
+                        )}
+                      </button>
 
-                      {/* Action Buttons */}
+                      {/* Right: Copy, Insert... & Playground */}
                       <div className="flex items-center space-x-1">
                         <button
                           onClick={() => handleCopySyntax(tag)}
@@ -477,25 +587,15 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
                         </button>
 
                         <button
-                          onClick={() => handleInsertTag(tag)}
-                          className="flex items-center space-x-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer"
+                          onClick={() => handleOpenInsertModal(tag)}
+                          className="flex items-center space-x-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer hover:bg-white/[0.08]"
                           style={{
-                            backgroundColor: isInserted ? "var(--accent-glow)" : "transparent",
                             color: "var(--accent-primary)",
                           }}
-                          title="Insert tag directly into Studio script"
+                          title="Choose exact location to insert into studio script"
                         >
-                          {isInserted ? (
-                            <>
-                              <Check className="h-3 w-3" />
-                              <span>Inserted</span>
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-3 w-3" />
-                              <span>Insert</span>
-                            </>
-                          )}
+                          <Sparkles className="h-3 w-3" />
+                          <span>Insert...</span>
                         </button>
 
                         <button
@@ -559,9 +659,10 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
           </div>
 
           <div className="space-y-2 pt-1 border-t border-[var(--glass-border)]">
-            <button
-              onClick={handleSendPlaygroundToStudio}
-              className="flex w-full items-center justify-center space-x-2 rounded-xl py-2 text-xs font-semibold text-white shadow-md transition cursor-pointer"
+            <motion.button
+              {...buttonTapMotion}
+              onClick={() => setPlaygroundApplyModalOpen(true)}
+              className="flex w-full items-center justify-center space-x-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-md transition cursor-pointer"
               style={{
                 backgroundImage: "var(--accent-gradient)",
                 boxShadow: "0 0 16px var(--accent-glow)",
@@ -569,12 +670,12 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
             >
               <ArrowRight className="h-3.5 w-3.5" />
               <span>Apply Script to Studio</span>
-            </button>
+            </motion.button>
 
             {onNavigateToStudio && (
               <button
                 onClick={onNavigateToStudio}
-                className="flex w-full items-center justify-center space-x-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface)] py-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer"
+                className="flex w-full items-center justify-center space-x-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface)] py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer"
               >
                 <span>Back to Studio Workspace</span>
               </button>
@@ -582,6 +683,28 @@ export const TagsManagerPage: React.FC<TagsManagerPageProps> = ({ onNavigateToSt
           </div>
         </div>
       </div>
+
+      {/* Smart Tag Insertion Modal */}
+      <TagInsertionDialog
+        isOpen={insertModalOpen}
+        onClose={() => {
+          setInsertModalOpen(false);
+          setSelectedInsertTag(null);
+        }}
+        tag={selectedInsertTag}
+        onAuditionTag={handleAuditionTag}
+        isPlayingAudition={selectedInsertTag ? playingTagId === selectedInsertTag.id : false}
+        isLoadingAudition={selectedInsertTag ? loadingTagId === selectedInsertTag.id : false}
+        onNavigateToStudio={onNavigateToStudio}
+      />
+
+      {/* Smart Playground Apply Modal */}
+      <PlaygroundApplyDialog
+        isOpen={playgroundApplyModalOpen}
+        onClose={() => setPlaygroundApplyModalOpen(false)}
+        playgroundText={playgroundText}
+        onNavigateToStudio={onNavigateToStudio}
+      />
 
       {/* Modal: Create Custom Tag */}
       <AnimatePresence>

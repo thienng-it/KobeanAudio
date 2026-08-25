@@ -30,6 +30,8 @@ import {
   extractBlocksFromRaw,
   compileBlocksToRaw,
 } from "@/lib/templateAutoTagger";
+import { TagInsertionDialog } from "@/components/tags/TagInsertionDialog";
+import { generateAudio } from "@/lib/api";
 import {
   dropdownMotion,
   buttonTapMotion,
@@ -95,6 +97,87 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
   const [autoTagSuccessNotice, setAutoTagSuccessNotice] = useState<string | null>(null);
   const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
   const templateRef = React.useRef<HTMLDivElement>(null);
+
+  // Tag Insertion & Audition Modal State
+  const [selectedInsertTag, setSelectedInsertTag] = useState<StudioTag | null>(null);
+  const [insertModalOpen, setInsertModalOpen] = useState(false);
+  const [playingTagId, setPlayingTagId] = useState<string | null>(null);
+  const [loadingTagId, setLoadingTagId] = useState<string | null>(null);
+  const audioCache = React.useRef<Record<string, string>>({});
+  const currentAudioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  // Clean up audio on unmount
+  useEffect(() => {
+    return () => {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleAuditionTag = async (tag: StudioTag) => {
+    if (playingTagId === tag.id) {
+      if (currentAudioRef.current) currentAudioRef.current.pause();
+      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      setPlayingTagId(null);
+      return;
+    }
+    if (currentAudioRef.current) currentAudioRef.current.pause();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+
+    const sample = tag.exampleSnippet || `${tag.syntax} Sample nuance.`;
+    if (audioCache.current[tag.id]) {
+      const audio = new Audio(audioCache.current[tag.id]);
+      currentAudioRef.current = audio;
+      audio.onended = () => setPlayingTagId(null);
+      audio.onerror = () => setPlayingTagId(null);
+      setPlayingTagId(tag.id);
+      audio.play().catch(() => setPlayingTagId(null));
+      return;
+    }
+
+    try {
+      setLoadingTagId(tag.id);
+      const res = await generateAudio({
+        text: sample,
+        engine: "kokoro",
+        voiceId: "af_heart",
+        outputFormat: "wav",
+      });
+      if (res && res.audio_url) {
+        const fullUrl = res.audio_url.startsWith("http")
+          ? res.audio_url
+          : `http://127.0.0.1:8000${res.audio_url}`;
+        audioCache.current[tag.id] = fullUrl;
+        const audio = new Audio(fullUrl);
+        currentAudioRef.current = audio;
+        audio.onended = () => setPlayingTagId(null);
+        audio.onerror = () => setPlayingTagId(null);
+        setLoadingTagId(null);
+        setPlayingTagId(tag.id);
+        audio.play().catch(() => setPlayingTagId(null));
+      } else {
+        throw new Error("No url");
+      }
+    } catch (err) {
+      setLoadingTagId(null);
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        const clean = sample.replace(/\[[^\]]*\]/g, "").replace(/<[^>]*>/g, "").trim() || tag.name;
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.rate = 1.0;
+        utter.onend = () => setPlayingTagId(null);
+        utter.onerror = () => setPlayingTagId(null);
+        setPlayingTagId(tag.id);
+        window.speechSynthesis.speak(utter);
+      } else {
+        setPlayingTagId(null);
+      }
+    }
+  };
 
   // Close template dropdown on outside click
   useEffect(() => {
@@ -443,17 +526,14 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
                     e.dataTransfer.effectAllowed = "copy";
                   }}
                   onClick={() => {
-                    if (mode === "visual" && blocks.length > 0) {
-                      insertTagToBlock(blocks[0].id, tag.syntax);
-                    } else {
-                      insertTagToRawScript(tag.syntax);
-                    }
+                    setSelectedInsertTag(tag);
+                    setInsertModalOpen(true);
                   }}
-                  className="group flex cursor-grab active:cursor-grabbing items-center space-x-1 shrink-0 rounded-md border border-[var(--glass-border)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[10px] font-medium transition hover:border-[var(--accent-primary)]"
+                  className="group flex cursor-grab active:cursor-grabbing items-center space-x-1 shrink-0 rounded-md border border-[var(--glass-border)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[10px] font-medium transition hover:border-[var(--accent-primary)] cursor-pointer"
                   style={{
                     color: "var(--text-main)",
                   }}
-                  title={`Drag '${tag.syntax}' into any text position`}
+                  title={`Click to insert '${tag.syntax}' at specific location, or drag into text`}
                 >
                   <GripVertical className="h-2 w-2 opacity-40 group-hover:opacity-100" />
                   <span className="font-semibold" style={{ color: "var(--accent-primary)" }}>
@@ -770,6 +850,19 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Smart Tag Insertion Modal */}
+      <TagInsertionDialog
+        isOpen={insertModalOpen}
+        onClose={() => {
+          setInsertModalOpen(false);
+          setSelectedInsertTag(null);
+        }}
+        tag={selectedInsertTag}
+        onAuditionTag={handleAuditionTag}
+        isPlayingAudition={selectedInsertTag ? playingTagId === selectedInsertTag.id : false}
+        isLoadingAudition={selectedInsertTag ? loadingTagId === selectedInsertTag.id : false}
+      />
     </div>
   );
 };
