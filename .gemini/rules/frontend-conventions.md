@@ -47,3 +47,13 @@ KobeanAudio's frontend is built with **Next.js 15 (App Router)**, **Tailwind CSS
   - `SPRINGS.popover`: Spring curve for sidebars and collapsible drawers.
 - **Solid Glass Elevation (`globals.css`)**:
   - Popovers and menus must use `.glass-popover` (high opacity `0.96–0.98` with deep specular drop shadow) to eliminate background text bleed-through.
+
+---
+
+## 5. UI Layout Invariants & Dock Overflow Safety
+
+- **Dock Overflow**: Outer containers hosting dropdowns or floating popovers (`TopNav`, `AudioPlayer`) must strictly use `overflow-visible`. Never apply `overflow-hidden` to fixed-height dock containers.
+- **macOS Window Control Clearance**: `TopNav.tsx` must enforce `style={{ paddingLeft: "84px" }}` inline directly on `<header>` without conflicting responsive `px-` utility classes.
+- **Flexbox Viewport Shrink Bounds**: All middle `flex-1` layout parents in `page.tsx` and `TextEditor.tsx` must include `min-h-0` to prevent vertical layout spillover on short viewports. Fixed header and footer docks must include `shrink-0`.
+- **Scroll Container Padding**: Scrollable sidebars (`StudioInspector.tsx`) must have `pb-24`, and script canvases (`TextEditor.tsx`) must have `pb-16` to guarantee bottom controls are never cut off.
+- **Desktop Window Bounds**: Native desktop window minimum size is strictly `980x640` (default `1360x880`), mirrored with `min-w-[980px] min-h-[640px]` on the root web container.

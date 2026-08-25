@@ -4,8 +4,9 @@ When contributing to KobeanAudio, apply these five cross-cutting engineering dis
 
 ---
 
-### 0. 🕸️ Architecture Discovery & Codegraph Pre-Check
+### 0. 🕸️ Architecture Discovery & Historical Beads Pre-Check
 - **Mandatory Codegraph Reference**: Before implementing new features or refactoring existing ones, always review [docs/CODEGRAPH.md](file:///Users/josephnguyen/Desktop/KobeanAudio/docs/CODEGRAPH.md).
+- **Historical Beads & Lessons Learned**: Always cross-reference [`.beads/BEADS.md`](file:///Users/josephnguyen/Desktop/KobeanAudio/.beads/BEADS.md) and [`.gemini/rules/lessons-learned.md`](file:///Users/josephnguyen/Desktop/KobeanAudio/.gemini/rules/lessons-learned.md) to guarantee past bugs (dock clipping, macOS traffic lights, flexbox collapse) are never reintroduced.
 - **Module Dependency Tracing**: Cross-reference the Dependency Matrix to identify upstream callers and downstream subscribers across the 7 TTS Engines, DSP services, FastAPI routes, and Zustand stores.
 - **Side-Effect Prevention**: Verify that changes to shared schemas, state stores, or audio pipelines do not break unrelated components.
 
