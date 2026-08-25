@@ -114,13 +114,13 @@ export const EnginePicker: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-1.5 rounded-lg border border-[var(--glass-border)] bg-white/[0.03] px-2.5 py-1 text-xs text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-white/20 hover:bg-white/[0.06] whitespace-nowrap shrink-0 cursor-pointer"
       >
-        <CurrentIcon className={`h-3 w-3 ${currentEngine.accent}`} />
-        <span className="font-semibold text-[11px] whitespace-nowrap">{currentEngine.name}</span>
-        <span className="rounded bg-white/10 px-1 py-0.2 text-[8px] font-mono uppercase text-[var(--text-muted)] whitespace-nowrap">
+        <CurrentIcon className={`h-3 w-3 shrink-0 ${currentEngine.accent}`} />
+        <span className="font-semibold text-[11px] whitespace-nowrap hidden sm:inline">{currentEngine.name}</span>
+        <span className="rounded bg-white/10 px-1 py-0.2 text-[8px] font-mono uppercase text-[var(--text-muted)] whitespace-nowrap hidden xl:inline">
           {currentEngine.badge}
         </span>
         <ChevronDown
-          className={`h-2.5 w-2.5 opacity-40 transition duration-200 ${
+          className={`h-2.5 w-2.5 opacity-40 transition duration-200 shrink-0 ${
             isOpen ? "rotate-180 opacity-100" : ""
           }`}
         />

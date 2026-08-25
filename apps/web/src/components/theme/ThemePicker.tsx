@@ -47,8 +47,8 @@ export const ThemePicker: React.FC = () => {
         title="Change Studio Theme"
       >
         <span className="text-xs">{activeThemeObj.icon}</span>
-        <span className="font-medium text-[11px] whitespace-nowrap">{activeThemeObj.name}</span>
-        <div className="flex items-center -space-x-1 shrink-0">
+        <span className="font-medium text-[11px] whitespace-nowrap hidden sm:inline">{activeThemeObj.name}</span>
+        <div className="hidden md:flex items-center -space-x-1 shrink-0">
           {activeThemeObj.dots.slice(0, 2).map((dot, idx) => (
             <div
               key={idx}

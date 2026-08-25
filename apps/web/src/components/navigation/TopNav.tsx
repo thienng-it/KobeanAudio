@@ -116,10 +116,10 @@ export const TopNav: React.FC<TopNavProps> = ({
   return (
     <header
       data-tauri-drag-region
-      className="relative z-40 flex h-12 w-full shrink-0 items-center justify-between border-b border-[var(--glass-border)] bg-[var(--bg-surface-dock)] px-3 pl-[78px] backdrop-blur-2xl text-[var(--text-main)] overflow-visible select-none gap-2"
+      className="relative z-40 flex h-12 w-full shrink-0 items-center justify-between border-b border-[var(--glass-border)] bg-[var(--bg-surface-dock)] px-2 sm:px-3 pl-[78px] backdrop-blur-2xl text-[var(--text-main)] overflow-hidden select-none gap-1 sm:gap-2"
     >
       {/* Zone 1 (Left): App Identity & Workspaces */}
-      <div className="flex items-center space-x-2 shrink-0">
+      <div className="flex items-center space-x-1.5 shrink-0 min-w-0">
         {/* Toggle Audio Files Explorer Button */}
         {onToggleAudioSidebar && (
           <motion.button
@@ -137,19 +137,19 @@ export const TopNav: React.FC<TopNavProps> = ({
         )}
 
         {/* Brand App Icon & Name */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 shrink-0">
           <div
-            className="flex h-6.5 w-6.5 items-center justify-center rounded-lg p-[1px] shadow-sm shrink-0"
+            className="flex h-6 w-6 items-center justify-center rounded-lg p-[1px] shadow-sm shrink-0"
             style={{ backgroundImage: "var(--accent-gradient)" }}
           >
             <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-[var(--bg-base)]">
               <AudioWaveform
-                className="h-3.5 w-3.5"
+                className="h-3 w-3"
                 style={{ color: "var(--accent-primary)" }}
               />
             </div>
           </div>
-          <span className="text-xs font-bold tracking-tight text-[var(--text-main)] whitespace-nowrap">
+          <span className="text-xs font-bold tracking-tight text-[var(--text-main)] whitespace-nowrap hidden lg:inline">
             KobeanAudio
           </span>
         </div>
@@ -161,13 +161,13 @@ export const TopNav: React.FC<TopNavProps> = ({
           <motion.button
             {...buttonSubtleTapMotion}
             onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-            className="flex items-center space-x-1.5 rounded-lg border border-[var(--glass-border)] bg-white/[0.03] px-2.5 py-1 text-xs text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer whitespace-nowrap shrink-0"
+            className="flex items-center space-x-1.5 rounded-lg border border-[var(--glass-border)] bg-white/[0.03] px-2 py-1 text-xs text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer whitespace-nowrap shrink-0"
           >
             <Folder
               className="h-3 w-3 shrink-0"
               style={{ color: "var(--accent-primary)" }}
             />
-            <span className="max-w-[120px] truncate font-medium text-[11px] whitespace-nowrap">
+            <span className="max-w-[70px] sm:max-w-[120px] truncate font-medium text-[11px] whitespace-nowrap">
               {activeProject ? activeProject.name : "Studio Workspace"}
             </span>
             <ChevronDown className="h-3 w-3 opacity-40 shrink-0" />
@@ -235,7 +235,7 @@ export const TopNav: React.FC<TopNavProps> = ({
         <div className="flex items-center rounded-xl bg-black/10 dark:bg-black/40 p-0.5 border border-[var(--glass-border)] shadow-inner shrink-0">
           <button
             onClick={() => onTabChange("studio")}
-            className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`flex items-center space-x-1.5 rounded-lg px-2 sm:px-2.5 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === "studio"
                 ? "bg-white/[0.2] dark:bg-white/[0.14] text-[var(--text-main)] font-semibold shadow-sm border border-white/20"
                 : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -245,12 +245,12 @@ export const TopNav: React.FC<TopNavProps> = ({
               className="h-3 w-3 shrink-0"
               style={{ color: "var(--accent-primary)" }}
             />
-            <span className="whitespace-nowrap">Studio</span>
+            <span className="whitespace-nowrap hidden sm:inline">Studio</span>
           </button>
 
           <button
             onClick={() => onTabChange("tags")}
-            className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`flex items-center space-x-1.5 rounded-lg px-2 sm:px-2.5 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === "tags"
                 ? "bg-white/[0.2] dark:bg-white/[0.14] text-[var(--text-main)] font-semibold shadow-sm border border-white/20"
                 : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -260,7 +260,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               className="h-3 w-3 shrink-0"
               style={{ color: "var(--accent-secondary)" }}
             />
-            <span className="whitespace-nowrap">Tags Library</span>
+            <span className="whitespace-nowrap hidden md:inline">Tags</span>
             <span
               className="rounded-full px-1.5 py-0.2 text-[9px] font-mono border border-[var(--glass-border)] shrink-0"
               style={{
@@ -275,7 +275,7 @@ export const TopNav: React.FC<TopNavProps> = ({
       )}
 
       {/* Zone 3 (Right): Engine, Theme & Tools */}
-      <div className="flex items-center space-x-1.5 shrink-0">
+      <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
         <EnginePicker />
 
         <div className="h-3.5 w-[1px] bg-white/10 shrink-0" />
@@ -286,14 +286,14 @@ export const TopNav: React.FC<TopNavProps> = ({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onOpenVoiceClone}
-          className="flex items-center space-x-1.5 rounded-lg border border-[var(--glass-border)] bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-[var(--text-main)] transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer whitespace-nowrap shrink-0"
+          className="flex items-center space-x-1.5 rounded-lg border border-[var(--glass-border)] bg-white/[0.03] px-2 py-1 text-xs font-medium text-[var(--text-main)] transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer whitespace-nowrap shrink-0"
           title="Clone Voice from Audio"
         >
           <Mic
             className="h-3 w-3 shrink-0"
             style={{ color: "var(--accent-primary)" }}
           />
-          <span className="hidden lg:inline text-[11px] whitespace-nowrap">Clone Voice</span>
+          <span className="hidden 2xl:inline text-[11px] whitespace-nowrap">Clone Voice</span>
         </motion.button>
 
         {/* Refresh Live Sync Button */}
@@ -302,7 +302,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           whileTap={{ scale: 0.98 }}
           onClick={handleRefreshApp}
           disabled={isRefreshing}
-          className={`flex items-center space-x-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center space-x-1.5 rounded-lg border px-2 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
             refreshSuccess
               ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400 font-semibold"
               : "border-[var(--glass-border)] bg-white/[0.03] text-[var(--text-main)] hover:border-white/20 hover:bg-white/[0.06]"
@@ -313,7 +313,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             className={`h-3 w-3 shrink-0 ${isRefreshing ? "animate-spin text-[var(--accent-primary)]" : ""}`}
             style={{ color: refreshSuccess ? undefined : "var(--accent-primary)" }}
           />
-          <span className="text-[11px] whitespace-nowrap">
+          <span className="hidden xl:inline text-[11px] whitespace-nowrap">
             {refreshSuccess ? "Synced!" : "Refresh"}
           </span>
         </motion.button>

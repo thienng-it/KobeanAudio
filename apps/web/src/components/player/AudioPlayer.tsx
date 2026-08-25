@@ -154,14 +154,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   return (
-    <div className="liquid-glass-dock flex h-21 w-full items-center justify-between px-6 border-t border-[var(--glass-border)] shadow-2xl transition-all">
+    <div className="liquid-glass-dock flex h-20 sm:h-21 w-full items-center justify-between px-3 sm:px-5 gap-2 border-t border-[var(--glass-border)] shadow-2xl transition-all select-none overflow-hidden">
       {/* Left: Primary Synthesize / Playback Action Button */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2 shrink-0">
         <motion.button
           {...buttonTapMotion}
           onClick={onGenerate}
           disabled={isGenerating || !canGenerate}
-          className="relative flex items-center space-x-2.5 rounded-xl border border-white/20 px-5 py-2.5 text-xs font-semibold text-white shadow-xl backdrop-blur-xl transition hover:opacity-90 disabled:opacity-30 cursor-pointer"
+          className="relative flex items-center space-x-2 rounded-xl border border-white/20 px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs font-semibold text-white shadow-xl backdrop-blur-xl transition hover:opacity-90 disabled:opacity-30 cursor-pointer shrink-0"
           style={{
             backgroundImage: canGenerate && !isGenerating ? "var(--accent-gradient)" : undefined,
             boxShadow: canGenerate && !isGenerating ? "0 0 20px var(--accent-glow)" : undefined,
@@ -170,14 +170,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         >
           {isGenerating ? (
             <>
-              <SpinnerIcon className="h-4 w-4 animate-spin text-white" />
-              <span>Synthesizing Voice...</span>
+              <SpinnerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-white shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">Synthesizing...</span>
+              <span className="sm:hidden text-[11px] whitespace-nowrap">...</span>
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4 text-white" />
-              <span>Generate Audio</span>
-              <kbd className="hidden md:inline rounded bg-black/25 px-1.5 py-0.5 font-mono text-[9px] text-white/80">
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">Generate Audio</span>
+              <span className="sm:hidden text-[11px] whitespace-nowrap">Generate</span>
+              <kbd className="hidden lg:inline rounded bg-black/25 px-1.5 py-0.5 font-mono text-[9px] text-white/80">
                 ⌘↵
               </kbd>
             </>
@@ -185,7 +187,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </motion.button>
 
         {/* Live Audio Equalizer Meter */}
-        <div className="hidden sm:flex items-center space-x-1 h-5 px-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+        <div className="hidden lg:flex items-center space-x-1 h-5 px-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
           <div
             className={`w-0.5 rounded-full transition-all ${
               isPlaying ? "eq-bar-1" : "h-1 bg-white/20"
@@ -214,24 +216,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       </div>
 
       {/* Center: Transport Controls & WaveSurfer Canvas */}
-      <div className="flex flex-1 max-w-2xl mx-6 items-center space-x-4">
+      <div className="flex flex-1 min-w-0 max-w-2xl mx-1 sm:mx-3 items-center space-x-1.5 sm:space-x-3">
         {/* Skip Backwards */}
         <button
           onClick={() => seekRelative(-5)}
           disabled={!audioUrl}
-          className="rounded-xl p-2 text-[var(--text-faint)] hover:bg-white/10 hover:text-[var(--text-main)] disabled:opacity-20 transition"
+          className="hidden md:flex rounded-xl p-1.5 text-[var(--text-faint)] hover:bg-white/10 hover:text-[var(--text-main)] disabled:opacity-20 transition cursor-pointer shrink-0"
           title="Skip back 5s"
         >
-          <RotateCcw className="h-4 w-4" />
+          <RotateCcw className="h-3.5 w-3.5" />
         </button>
 
-        {/* Primary Play / Pause Button with Prominent Accent Theme Glow */}
+        {/* Primary Play / Pause Button */}
         <motion.button
           whileHover={{ scale: audioUrl ? 1.08 : 1 }}
           whileTap={{ scale: audioUrl ? 0.92 : 1 }}
           onClick={togglePlay}
           disabled={!audioUrl}
-          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white shadow-xl transition disabled:opacity-30 cursor-pointer"
+          className="relative flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full text-white shadow-xl transition disabled:opacity-30 cursor-pointer"
           style={{
             backgroundImage: audioUrl ? "var(--accent-gradient)" : undefined,
             backgroundColor: !audioUrl ? "rgba(255, 255, 255, 0.1)" : undefined,
@@ -242,9 +244,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           title={isPlaying ? "Pause (Space)" : "Play (Space)"}
         >
           {isPlaying ? (
-            <Pause className="h-5 w-5 fill-current" />
+            <Pause className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
           ) : (
-            <Play className="h-5 w-5 fill-current ml-0.5" />
+            <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current ml-0.5" />
           )}
         </motion.button>
 
@@ -252,10 +254,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <button
           onClick={() => seekRelative(5)}
           disabled={!audioUrl}
-          className="rounded-xl p-2 text-[var(--text-faint)] hover:bg-white/10 hover:text-[var(--text-main)] disabled:opacity-20 transition"
+          className="hidden md:flex rounded-xl p-1.5 text-[var(--text-faint)] hover:bg-white/10 hover:text-[var(--text-main)] disabled:opacity-20 transition cursor-pointer shrink-0"
           title="Skip forward 5s"
         >
-          <RotateCw className="h-4 w-4" />
+          <RotateCw className="h-3.5 w-3.5" />
         </button>
 
         {/* Waveform Display Container */}
@@ -264,44 +266,44 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             if (audioUrl && onOpenTrim) onOpenTrim();
           }}
           title={audioUrl ? "Click to seek · Double-click to open Direct Waveform Trimmer" : undefined}
-          className="relative flex-1 h-13 rounded-2xl bg-black/25 border border-white/[0.08] px-3 flex items-center shadow-inner overflow-hidden cursor-pointer"
+          className="relative flex-1 min-w-[70px] sm:min-w-[130px] h-10 sm:h-13 rounded-2xl bg-black/25 border border-white/[0.08] px-2 sm:px-3 flex items-center shadow-inner overflow-hidden cursor-pointer"
         >
           <div ref={containerRef} className="w-full relative z-10" />
 
           {/* Idle Placeholder */}
           {!audioUrl && !isGenerating && (
-            <div className="absolute inset-0 flex items-center justify-center space-x-2 text-xs text-[var(--text-faint)] font-medium">
-              <AudioWaveform className="h-4 w-4 opacity-50" />
-              <span>Ready for Audio Generation · Press ⌘↵</span>
+            <div className="absolute inset-0 flex items-center justify-center space-x-1.5 text-[11px] sm:text-xs text-[var(--text-faint)] font-medium px-2 overflow-hidden pointer-events-none select-none">
+              <AudioWaveform className="h-3.5 w-3.5 opacity-50 shrink-0" />
+              <span className="truncate whitespace-nowrap">Ready · ⌘↵</span>
             </div>
           )}
 
           {/* Generating Shimmer Indicator */}
           {isGenerating && (
-            <div className="absolute inset-0 flex items-center justify-center space-x-2 bg-[var(--accent-primary)]/10 text-xs text-[var(--accent-primary)] font-medium animate-pulse">
-              <SpinnerIcon className="h-4 w-4 animate-spin" />
-              <span>Streaming neural audio synthesis...</span>
+            <div className="absolute inset-0 flex items-center justify-center space-x-1.5 bg-[var(--accent-primary)]/10 text-[10px] sm:text-xs text-[var(--accent-primary)] font-medium animate-pulse px-2 overflow-hidden pointer-events-none select-none">
+              <SpinnerIcon className="h-3.5 w-3.5 animate-spin shrink-0" />
+              <span className="truncate whitespace-nowrap">Synthesizing audio...</span>
             </div>
           )}
         </div>
 
         {/* High-Precision Studio Timecode */}
-        <div className="font-mono text-xs shrink-0 w-24 text-right space-x-0.5">
+        <div className="font-mono text-[10px] sm:text-xs shrink-0 text-right space-x-0.5 whitespace-nowrap">
           <span className="font-semibold text-[var(--text-main)]">{formatTime(currentTime)}</span>
-          <span className="text-[var(--text-faint)]"> / </span>
+          <span className="text-[var(--text-faint)]">/</span>
           <span className="text-[var(--text-muted)]">{formatTime(duration)}</span>
         </div>
       </div>
 
       {/* Right: Playback Speed, Volume & Master Export */}
-      <div className="flex items-center space-x-3.5">
+      <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
         {/* Speed presets */}
         <div className="hidden xl:flex items-center rounded-xl bg-black/10 dark:bg-white/[0.04] p-0.5 border border-[var(--glass-border)] backdrop-blur-md">
           {[0.8, 1.0, 1.25, 1.5, 2.0].map((rate) => (
             <button
               key={rate}
               onClick={() => handleSpeedChange(rate)}
-              className={`rounded-lg px-2 py-0.5 text-[10px] font-mono transition cursor-pointer ${
+              className={`rounded-lg px-1.5 py-0.5 text-[10px] font-mono transition cursor-pointer ${
                 playbackRate === rate
                   ? "bg-white/[0.25] dark:bg-white/[0.16] text-[var(--text-main)] font-semibold shadow-sm border border-[var(--glass-border)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -313,7 +315,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
 
         {/* Volume Controls */}
-        <div className="hidden md:flex items-center space-x-2">
+        <div className="hidden lg:flex items-center space-x-1.5">
           <button
             onClick={toggleMute}
             className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer"
@@ -331,7 +333,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             step="0.05"
             value={isMuted ? 0 : volume}
             onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-            className="w-14"
+            className="w-12"
           />
         </div>
 
@@ -341,11 +343,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             {...buttonTapMotion}
             onClick={onOpenTrim}
             disabled={!audioUrl}
-            className="flex items-center space-x-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface-elevated)] px-3 py-2 text-xs font-semibold text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-[var(--accent-secondary)] disabled:opacity-30 cursor-pointer"
+            className="flex items-center space-x-1 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface-elevated)] px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-semibold text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-[var(--accent-secondary)] disabled:opacity-30 cursor-pointer shrink-0"
             title="Trim & Cut Audio Take (✂️)"
           >
-            <Scissors className="h-3.5 w-3.5" style={{ color: "var(--accent-secondary)" }} />
-            <span className="hidden sm:inline">Trim</span>
+            <Scissors className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--accent-secondary)" }} />
+            <span className="hidden sm:inline text-[11px]">Trim</span>
           </motion.button>
         )}
 
@@ -354,13 +356,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           {...buttonTapMotion}
           onClick={onOpenExport}
           disabled={!audioUrl}
-          className="flex items-center space-x-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface-elevated)] px-3.5 py-2 text-xs font-semibold text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-[var(--accent-primary)] disabled:opacity-30 cursor-pointer"
+          className="flex items-center space-x-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface-elevated)] px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-[var(--accent-primary)] disabled:opacity-30 cursor-pointer shrink-0"
         >
-          <Download className="h-3.5 w-3.5" style={{ color: "var(--accent-primary)" }} />
-          <span>Export Master</span>
+          <Download className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--accent-primary)" }} />
+          <span className="hidden md:inline text-[11px] whitespace-nowrap">Export Master</span>
+          <span className="md:hidden text-[11px] whitespace-nowrap">Export</span>
         </motion.button>
       </div>
-
     </div>
   );
 };
