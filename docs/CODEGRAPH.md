@@ -127,6 +127,7 @@ graph TD
 | **Store** | `audioFilesStore.ts`| `useAudioFilesStore`| `api.ts` | `AudioFilesSidebar`, `TopNav` |
 | **Store** | `tagStore.ts` | `useTagStore` | LocalStorage, defaults | `TagsManagerPage`, `TextEditor` |
 | **Store** | `themeStore.ts` | `useThemeStore` | DOM `data-theme` | `TopNav`, `globals.css` |
+| **UI** | `TopNav.tsx` | `TopNav` | `useProjectStore`, `useEngineStore`, `useAudioFilesStore` | `StudioPage` (Native macOS insets, project selector, Live-Sync Refresh, engine switcher) |
 | **UI** | `TextEditor.tsx` | `TextEditor` | `useProjectStore`, `useTagStore`| `StudioPage` |
 | **UI** | `AudioPlayer.tsx` | `AudioPlayer` | `wavesurfer.js`, `usePlayerStore`| `StudioPage` |
 | **UI** | `AudioTrimDialog.tsx` | `AudioTrimDialog` | `wavesurfer.js`, `export.py` | `StudioPage`, `AudioPlayer` (Direct DAW Waveform Trimming, In/Out drag handles, auto-snap silence) |

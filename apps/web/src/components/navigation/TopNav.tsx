@@ -15,10 +15,12 @@ import {
   PanelRightOpen,
   Tag,
   Sliders,
+  RefreshCw,
 } from "lucide-react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useTagStore } from "@/stores/tagStore";
 import { useAudioFilesStore } from "@/stores/audioFilesStore";
+import { useEngineStore } from "@/stores/engineStore";
 import { dropdownMotion, buttonTapMotion, buttonSubtleTapMotion } from "@/lib/motion";
 import { ThemePicker } from "@/components/theme/ThemePicker";
 import { EnginePicker } from "@/components/navigation/EnginePicker";
@@ -54,7 +56,42 @@ export const TopNav: React.FC<TopNavProps> = ({
   const { tags } = useTagStore();
   const { files } = useAudioFilesStore();
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
   const projectRef = useRef<HTMLDivElement>(null);
+
+  const handleRefreshApp = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.allSettled([
+        useAudioFilesStore.getState().loadAudioFiles(),
+        useProjectStore.getState().loadProjects(),
+        useEngineStore.getState().loadEngines(),
+        useEngineStore.getState().loadVoices(),
+        useEngineStore.getState().loadQuotaStatus(),
+        useTagStore.getState().loadSavedCustomTags(),
+      ]);
+      setRefreshSuccess(true);
+      setTimeout(() => setRefreshSuccess(false), 2200);
+    } catch (err) {
+      console.error("Studio live-refresh error:", err);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 600);
+    }
+  };
+
+  // Keyboard shortcut listener for ⌘R / Ctrl+R to live-sync without page flash
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "r" && !e.shiftKey) {
+        e.preventDefault();
+        handleRefreshApp();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isRefreshing]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -257,6 +294,28 @@ export const TopNav: React.FC<TopNavProps> = ({
             style={{ color: "var(--accent-primary)" }}
           />
           <span className="hidden lg:inline text-[11px] whitespace-nowrap">Clone Voice</span>
+        </motion.button>
+
+        {/* Refresh Live Sync Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleRefreshApp}
+          disabled={isRefreshing}
+          className={`flex items-center space-x-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition cursor-pointer whitespace-nowrap shrink-0 ${
+            refreshSuccess
+              ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400 font-semibold"
+              : "border-[var(--glass-border)] bg-white/[0.03] text-[var(--text-main)] hover:border-white/20 hover:bg-white/[0.06]"
+          }`}
+          title="Refresh & Synchronize Studio (⌘R)"
+        >
+          <RefreshCw
+            className={`h-3 w-3 shrink-0 ${isRefreshing ? "animate-spin text-[var(--accent-primary)]" : ""}`}
+            style={{ color: refreshSuccess ? undefined : "var(--accent-primary)" }}
+          />
+          <span className="text-[11px] whitespace-nowrap">
+            {refreshSuccess ? "Synced!" : "Refresh"}
+          </span>
         </motion.button>
 
         <motion.button
