@@ -127,9 +127,9 @@ graph TD
 | **Store** | `audioFilesStore.ts`| `useAudioFilesStore`| `api.ts` | `AudioFilesSidebar`, `TopNav` |
 | **Store** | `tagStore.ts` | `useTagStore` | LocalStorage, defaults | `TagsManagerPage`, `TextEditor` |
 | **Store** | `themeStore.ts` | `useThemeStore` | DOM `data-theme` | `TopNav`, `globals.css` |
-| **UI** | `TopNav.tsx` | `TopNav` | `useProjectStore`, `useEngineStore`, `useAudioFilesStore` | `StudioPage` (Native macOS insets, project selector, Live-Sync Refresh, engine switcher) |
+| **UI** | `TopNav.tsx` | `TopNav` | `useProjectStore`, `useEngineStore`, `useAudioFilesStore` | `StudioPage` (Native macOS insets, project selector, Live-Sync Refresh, More Actions `···` menu) |
 | **UI** | `TextEditor.tsx` | `TextEditor` | `useProjectStore`, `useTagStore`| `StudioPage` |
-| **UI** | `AudioPlayer.tsx` | `AudioPlayer` | `wavesurfer.js`, `usePlayerStore`| `StudioPage` |
+| **UI** | `AudioPlayer.tsx` | `AudioPlayer` | `wavesurfer.js`, `usePlayerStore`| `StudioPage` (Audio DSP Tools popover, speed presets, volume slider, WaveSurfer) |
 | **UI** | `AudioTrimDialog.tsx` | `AudioTrimDialog` | `wavesurfer.js`, `export.py` | `StudioPage`, `AudioPlayer` (Direct DAW Waveform Trimming, In/Out drag handles, auto-snap silence) |
 | **UI** | `ExportDialog.tsx` | `ExportDialog` | `api.ts`, `useAudioFilesStore` | `StudioPage`, `AudioPlayer` |
 | **UI** | `TagsManagerPage.tsx`| `TagsManagerPage` | `useTagStore`, `motion.ts`, `api.ts` | `StudioPage` |
