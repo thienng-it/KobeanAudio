@@ -377,8 +377,8 @@ export const TopNav: React.FC<TopNavProps> = ({
           )}
         </button>
 
-        {/* Overflow "More Studio Actions" Popover Menu */}
-        <div ref={moreMenuRef} className="relative shrink-0">
+        {/* Overflow "More Studio Actions" Popover Menu (Visible only when window is tight) */}
+        <div ref={moreMenuRef} className="relative shrink-0 xl:hidden">
           <motion.button
             {...buttonSubtleTapMotion}
             onClick={() => setMoreMenuOpen(!moreMenuOpen)}

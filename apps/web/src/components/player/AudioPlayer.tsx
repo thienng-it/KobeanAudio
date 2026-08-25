@@ -368,8 +368,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </motion.button>
         )}
 
-        {/* Compact & Overflow Audio Tools Popover Button */}
-        <div ref={toolsRef} className="relative shrink-0">
+        {/* Compact & Overflow Audio Tools Popover Button (Visible only when window is tight) */}
+        <div ref={toolsRef} className="relative shrink-0 xl:hidden">
           <motion.button
             {...buttonSubtleTapMotion}
             onClick={() => setToolsPopoverOpen(!toolsPopoverOpen)}
