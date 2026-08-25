@@ -16,6 +16,8 @@ import {
   Tag,
   Sliders,
   RefreshCw,
+  MoreHorizontal,
+  Command,
 } from "lucide-react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useTagStore } from "@/stores/tagStore";
@@ -56,9 +58,11 @@ export const TopNav: React.FC<TopNavProps> = ({
   const { tags } = useTagStore();
   const { files } = useAudioFilesStore();
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const projectRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const handleRefreshApp = async () => {
     if (isRefreshing) return;
@@ -81,19 +85,35 @@ export const TopNav: React.FC<TopNavProps> = ({
     }
   };
 
-  // Keyboard shortcut listener for ⌘R / Ctrl+R to live-sync without page flash
+  // Global studio keyboard shortcuts (⌘R, ⌘S, ⌘B, ⌘I)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ⌘R / Ctrl+R: Refresh live sync
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "r" && !e.shiftKey) {
         e.preventDefault();
         handleRefreshApp();
       }
+      // ⌘S / Ctrl+S: Save project
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        saveCurrentProject();
+      }
+      // ⌘B / Ctrl+B: Toggle audio files sidebar
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b" && onToggleAudioSidebar) {
+        e.preventDefault();
+        onToggleAudioSidebar();
+      }
+      // ⌘I / Ctrl+I: Toggle inspector
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
+        e.preventDefault();
+        onToggleInspector();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRefreshing]);
+  }, [isRefreshing, onToggleAudioSidebar, onToggleInspector, saveCurrentProject]);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -101,6 +121,12 @@ export const TopNav: React.FC<TopNavProps> = ({
         !projectRef.current.contains(e.target as Node)
       ) {
         setProjectDropdownOpen(false);
+      }
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(e.target as Node)
+      ) {
+        setMoreMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -332,7 +358,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 
         <button
           onClick={onToggleInspector}
-          title={showInspector ? "Hide Inspector" : "Show Inspector"}
+          title={showInspector ? "Hide Inspector (⌘I)" : "Show Inspector (⌘I)"}
           className={`flex h-6.5 w-6.5 items-center justify-center rounded-lg border transition cursor-pointer shrink-0 ${
             showInspector
               ? "border-white/20 shadow-sm"
@@ -350,6 +376,136 @@ export const TopNav: React.FC<TopNavProps> = ({
             <PanelRightOpen className="h-3 w-3 shrink-0" />
           )}
         </button>
+
+        {/* Overflow "More Studio Actions" Popover Menu */}
+        <div ref={moreMenuRef} className="relative shrink-0">
+          <motion.button
+            {...buttonSubtleTapMotion}
+            onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+            className={`flex h-6.5 w-6.5 items-center justify-center rounded-lg border transition cursor-pointer shrink-0 ${
+              moreMenuOpen
+                ? "border-[var(--accent-primary)] bg-[var(--accent-glow)] text-[var(--accent-primary)] shadow-sm"
+                : "border-[var(--glass-border)] bg-white/[0.03] text-[var(--text-muted)] hover:border-white/20 hover:text-[var(--text-main)] hover:bg-white/[0.06]"
+            }`}
+            title="More Studio Tools & Shortcuts"
+          >
+            <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
+          </motion.button>
+
+          <AnimatePresence>
+            {moreMenuOpen && (
+              <motion.div
+                {...dropdownMotion}
+                className="glass-popover absolute right-0 top-full mt-1.5 w-64 rounded-2xl p-2 z-50 text-[var(--text-main)] shadow-2xl"
+              >
+                <div className="mb-1.5 flex items-center justify-between px-2.5 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)] border-b border-[var(--glass-border)]">
+                  <span>Studio Quick Actions</span>
+                  <span className="font-mono text-[9px]">⌘ Shortcuts</span>
+                </div>
+
+                <div className="space-y-1">
+                  {/* Clone Voice */}
+                  <button
+                    onClick={() => {
+                      onOpenVoiceClone();
+                      setMoreMenuOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-main)] transition cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Mic className="h-3.5 w-3.5" style={{ color: "var(--accent-primary)" }} />
+                      <span className="font-medium text-[11px]">Clone Voice from Audio</span>
+                    </div>
+                  </button>
+
+                  {/* Refresh Live Sync */}
+                  <button
+                    onClick={() => {
+                      handleRefreshApp();
+                      setMoreMenuOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-main)] transition cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RefreshCw className="h-3.5 w-3.5 text-emerald-400" />
+                      <span className="font-medium text-[11px]">Refresh & Sync Studio</span>
+                    </div>
+                    <kbd className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-[var(--text-faint)]">⌘R</kbd>
+                  </button>
+
+                  {/* Save Project */}
+                  <button
+                    onClick={() => {
+                      saveCurrentProject();
+                      setMoreMenuOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-main)] transition cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Save className="h-3.5 w-3.5" style={{ color: "var(--accent-secondary)" }} />
+                      <span className="font-medium text-[11px]">Save Project Workspace</span>
+                    </div>
+                    <kbd className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-[var(--text-faint)]">⌘S</kbd>
+                  </button>
+
+                  {/* Toggle Inspector */}
+                  <button
+                    onClick={() => {
+                      onToggleInspector();
+                      setMoreMenuOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-main)] transition cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <PanelRightOpen className="h-3.5 w-3.5" style={{ color: "var(--accent-primary)" }} />
+                      <span className="font-medium text-[11px]">
+                        {showInspector ? "Hide Inspector Panel" : "Show Inspector Panel"}
+                      </span>
+                    </div>
+                    <kbd className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-[var(--text-faint)]">⌘I</kbd>
+                  </button>
+
+                  {/* Audio Explorer */}
+                  {onToggleAudioSidebar && (
+                    <button
+                      onClick={() => {
+                        onToggleAudioSidebar();
+                        setMoreMenuOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-main)] transition cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FolderOpen className="h-3.5 w-3.5" style={{ color: "var(--accent-primary)" }} />
+                        <span className="font-medium text-[11px]">
+                          {showAudioSidebar ? "Hide Audio Explorer" : "Show Audio Explorer"}
+                        </span>
+                      </div>
+                      <kbd className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-[var(--text-faint)]">⌘B</kbd>
+                    </button>
+                  )}
+
+                  {/* Tags Library */}
+                  {onTabChange && (
+                    <button
+                      onClick={() => {
+                        onTabChange(activeTab === "studio" ? "tags" : "studio");
+                        setMoreMenuOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left text-[var(--text-muted)] hover:bg-white/10 hover:text-[var(--text-main)] transition cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Tag className="h-3.5 w-3.5" style={{ color: "var(--accent-secondary)" }} />
+                        <span className="font-medium text-[11px]">
+                          {activeTab === "studio" ? "Open Tags & Expressive Library" : "Back to Studio Editor"}
+                        </span>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </header>
   );

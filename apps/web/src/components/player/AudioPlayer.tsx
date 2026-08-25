@@ -16,9 +16,12 @@ import {
   RotateCw as SpinnerIcon,
   AudioWaveform,
   CheckCircle2,
+  SlidersHorizontal,
+  Sliders,
+  Settings2,
 } from "lucide-react";
 import { usePlayerStore } from "@/stores/playerStore";
-import { buttonTapMotion, buttonSubtleTapMotion } from "@/lib/motion";
+import { dropdownMotion, buttonTapMotion, buttonSubtleTapMotion } from "@/lib/motion";
 
 interface AudioPlayerProps {
   onOpenExport: () => void;
@@ -124,6 +127,20 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       wavesurferRef.current.playPause();
     }
   };
+
+  const [toolsPopoverOpen, setToolsPopoverOpen] = useState(false);
+  const toolsRef = useRef<HTMLDivElement>(null);
+
+  // Close tools popover on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
+        setToolsPopoverOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const seekRelative = (seconds: number) => {
     if (wavesurferRef.current && duration > 0) {
@@ -350,6 +367,116 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             <span className="hidden sm:inline text-[11px]">Trim</span>
           </motion.button>
         )}
+
+        {/* Compact & Overflow Audio Tools Popover Button */}
+        <div ref={toolsRef} className="relative shrink-0">
+          <motion.button
+            {...buttonSubtleTapMotion}
+            onClick={() => setToolsPopoverOpen(!toolsPopoverOpen)}
+            className={`flex h-8 w-8 items-center justify-center rounded-xl border transition cursor-pointer shrink-0 ${
+              toolsPopoverOpen
+                ? "border-[var(--accent-primary)] bg-[var(--accent-glow)] text-[var(--accent-primary)] shadow-sm"
+                : "border-[var(--glass-border)] bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:border-white/20 hover:text-[var(--text-main)]"
+            }`}
+            title="Audio Output, Speed & Volume Controls"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+          </motion.button>
+
+          <AnimatePresence>
+            {toolsPopoverOpen && (
+              <motion.div
+                {...dropdownMotion}
+                className="glass-popover absolute right-0 bottom-full mb-2 w-72 rounded-2xl p-3 z-50 text-[var(--text-main)] shadow-2xl space-y-3"
+              >
+                {/* Title */}
+                <div className="flex items-center justify-between border-b border-[var(--glass-border)] pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
+                  <span>Audio Playback & DSP</span>
+                  <span className="font-mono text-[9px]" style={{ color: "var(--accent-primary)" }}>Studio Output</span>
+                </div>
+
+                {/* Master Volume */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[var(--text-muted)] font-medium">Master Volume</span>
+                    <span className="font-mono text-[11px] text-[var(--text-main)] font-semibold">
+                      {isMuted ? "0% (Muted)" : `${Math.round(volume * 100)}%`}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={toggleMute}
+                      className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition cursor-pointer p-1 rounded-lg hover:bg-white/10"
+                    >
+                      {isMuted || volume === 0 ? (
+                        <VolumeX className="h-4 w-4 text-red-400" />
+                      ) : (
+                        <Volume2 className="h-4 w-4" style={{ color: "var(--accent-primary)" }} />
+                      )}
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={isMuted ? 0 : volume}
+                      onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                      className="flex-1 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Playback Speed Presets */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[var(--text-muted)] font-medium">Playback Speed</span>
+                    <span className="font-mono text-[11px] font-semibold" style={{ color: "var(--accent-primary)" }}>
+                      {playbackRate}x
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1 rounded-xl bg-black/20 p-1 border border-[var(--glass-border)]">
+                    {[0.8, 1.0, 1.25, 1.5, 2.0].map((rate) => (
+                      <button
+                        key={rate}
+                        onClick={() => handleSpeedChange(rate)}
+                        className={`rounded-lg py-1 text-[10px] font-mono font-semibold transition cursor-pointer text-center ${
+                          playbackRate === rate
+                            ? "text-white shadow-sm font-bold"
+                            : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/10"
+                        }`}
+                        style={{
+                          backgroundColor: playbackRate === rate ? "var(--accent-primary)" : undefined,
+                        }}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Transport Skip Buttons */}
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--glass-border)]">
+                  <button
+                    onClick={() => seekRelative(-5)}
+                    disabled={!audioUrl}
+                    className="flex items-center justify-center space-x-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface)] py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-30 cursor-pointer"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>Skip -5s</span>
+                  </button>
+                  <button
+                    onClick={() => seekRelative(5)}
+                    disabled={!audioUrl}
+                    className="flex items-center justify-center space-x-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-surface)] py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] disabled:opacity-30 cursor-pointer"
+                  >
+                    <RotateCw className="h-3.5 w-3.5" />
+                    <span>Skip +5s</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Master Export Button */}
         <motion.button
