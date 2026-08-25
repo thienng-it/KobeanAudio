@@ -26,6 +26,8 @@ This file establishes the operating standards and specialization roles for auton
 ## 📚 Discovery & Rule References
 
 - **Architecture Codegraph**: `docs/CODEGRAPH.md`
+- **Lessons Learned & Anti-Regression**: `.gemini/rules/lessons-learned.md`
+- **Historical Beads Ledger**: `.beads/BEADS.md` (`.beads/issues.jsonl`)
 - **Core Guidelines**: `.gemini/rules/core-guidelines.md`
 - **TTS Engines**: `.gemini/rules/tts-engines.md`
 - **Frontend Conventions**: `.gemini/rules/frontend-conventions.md`

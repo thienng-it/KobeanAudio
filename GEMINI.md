@@ -38,3 +38,4 @@ When developing or debugging this repository, you operate as FIVE world-class pr
 7. **Google AI Pro Standards**: Preserve the full 30 prebuilt voice catalog, 4 Gemini model variants, and 200+ director notes & expressive audio tags.
 8. **Streaming & Non-Blocking**: Audio generation endpoints must stream audio chunks via Server-Sent Events (SSE) and never block the main async event loop.
 9. **Detailed Rules**: See `.gemini/rules/` for specialized rules and `.gemini/skills/` for procedural workflows.
+10. **🧠 Lessons Learned & Historical Beads Memory**: Always consult `.gemini/rules/lessons-learned.md` and `.beads/BEADS.md` before making UI, dock, or layout changes to guarantee past bugs (dock clipping, macOS traffic lights, flexbox collapse) are never reintroduced.

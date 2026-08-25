@@ -143,7 +143,7 @@ export const TopNav: React.FC<TopNavProps> = ({
     <header
       data-tauri-drag-region
       style={{ paddingLeft: "84px" }}
-      className="relative z-40 flex h-12 w-full shrink-0 items-center justify-between border-b border-[var(--glass-border)] bg-[var(--bg-surface-dock)] pr-3 backdrop-blur-2xl text-[var(--text-main)] overflow-hidden select-none gap-1 sm:gap-2"
+      className="relative z-40 flex h-12 w-full shrink-0 items-center justify-between border-b border-[var(--glass-border)] bg-[var(--bg-surface-dock)] pr-3 backdrop-blur-2xl text-[var(--text-main)] overflow-visible select-none gap-1 sm:gap-2"
     >
       {/* Zone 1 (Left): App Identity & Workspaces */}
       <div className="flex items-center space-x-1.5 shrink-0 min-w-0">

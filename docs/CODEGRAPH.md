@@ -146,3 +146,4 @@ graph TD
 3. **Unified Motion & Spring Physics**: All dropdowns, dialogs, drawers, and buttons must consume centralized motion tokens from `apps/web/src/lib/motion.ts` (`dropdownMotion`, `modalMotion`, `buttonTapMotion`).
 4. **Zero-Any TypeScript**: All frontend API payloads and state interfaces must use strict Pydantic-mirrored types from `@kobeanaudio/types`.
 5. **Resilient Native Integration**: Native OS calls (such as folder pickers, Finder reveals) must handle user cancellation gracefully without throwing unhandled exceptions.
+6. **Anti-Regression & Beads Memory**: Always verify UI changes against `.gemini/rules/lessons-learned.md` and `.beads/BEADS.md` (e.g. `overflow-visible` on docks, `style={{ paddingLeft: "84px" }}` on TopNav, `min-h-0` on flexbox layouts, `pb-24`/`pb-16` scroll padding).

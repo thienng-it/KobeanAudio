@@ -130,7 +130,7 @@ export const EnginePicker: React.FC = () => {
         {isOpen && (
           <motion.div
             {...dropdownMotion}
-            className="glass-popover absolute left-0 top-full mt-1.5 w-72 rounded-2xl p-2 z-50 text-[var(--text-main)]"
+            className="glass-popover absolute right-0 top-full mt-1.5 w-72 rounded-2xl p-2 z-50 text-[var(--text-main)]"
           >
             <div className="mb-1.5 flex items-center justify-between px-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
               <span className="flex items-center space-x-1">
