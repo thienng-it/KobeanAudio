@@ -142,3 +142,54 @@ class AudioProcessor:
             print(f"[ERROR] Trimming failed: {e}")
             return wav_bytes, AudioProcessor.calculate_duration_ms(wav_bytes)
 
+    @classmethod
+    async def process_audio_async(
+        cls,
+        wav_bytes: bytes,
+        target_format: str = "wav",
+        bitrate: int = 320,
+        sample_rate: int | None = None,
+        normalize_lufs: float | None = -16.0,
+        trim_silence: bool = True,
+        fade_in_ms: int = 0,
+        fade_out_ms: int = 0,
+    ) -> tuple[bytes, str]:
+        """
+        Non-blocking async wrapper that executes CPU-bound audio processing inside a worker thread.
+        """
+        import asyncio
+        return await asyncio.to_thread(
+            cls.process_audio,
+            wav_bytes=wav_bytes,
+            target_format=target_format,
+            bitrate=bitrate,
+            sample_rate=sample_rate,
+            normalize_lufs=normalize_lufs,
+            trim_silence=trim_silence,
+            fade_in_ms=fade_in_ms,
+            fade_out_ms=fade_out_ms,
+        )
+
+    @classmethod
+    async def trim_audio_segment_async(
+        cls,
+        wav_bytes: bytes,
+        start_ms: int,
+        end_ms: int,
+        fade_in_ms: int = 50,
+        fade_out_ms: int = 50,
+    ) -> tuple[bytes, int]:
+        """
+        Non-blocking async wrapper that executes audio segment slicing inside a worker thread.
+        """
+        import asyncio
+        return await asyncio.to_thread(
+            cls.trim_audio_segment,
+            wav_bytes=wav_bytes,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            fade_in_ms=fade_in_ms,
+            fade_out_ms=fade_out_ms,
+        )
+
+

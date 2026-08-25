@@ -121,6 +121,8 @@ graph TD
 | **DSP** | `riff_packer.py` | `pack_riff_wav_header` | `struct`, Python stdlib | `audio_processor.py` |
 | **API** | `generate.py` | `POST /generate` | TTS Engines, `AudioProcessor` | `apps/web/lib/api.ts` |
 | **API** | `export.py` | `POST /export`, `/trim`, `/files` | `AudioProcessor`, `osascript` | `apps/web/lib/api.ts` |
+| **Middleware** | `logging_middleware.py` | `RequestTracingMiddleware` | `time`, `uuid`, Starlette | `main.py` (`X-Request-ID`, `X-Process-Time-Ms`) |
+| **Middleware** | `error_handler.py` | `register_error_handlers` | FastAPI Exception Handlers | `main.py` (Standardized domain exceptions) |
 | **Motion** | `motion.ts` | `SPRINGS`, `dropdownMotion`, `modalMotion` | `framer-motion` | All UI Components & Modals |
 | **Store** | `engineStore.ts` | `useEngineStore` | `api.ts` | `StudioInspector`, `TopNav` |
 | **Store** | `projectStore.ts` | `useProjectStore` | `api.ts` | `TextEditor`, `StudioInspector` |

@@ -54,10 +54,19 @@ async def export_audio(payload: ExportRequest, db=Depends(get_db)):
     if not audio_path or not audio_path.exists():
         raise HTTPException(status_code=404, detail="No audio available for export. Please generate a voice take first.")
 
-    with open(audio_path, "rb") as f:
-        original_bytes = f.read()
+    import asyncio
 
-    processed_bytes, mime_type = AudioProcessor.process_audio(
+    def _read_file(p: Path) -> bytes:
+        with open(p, "rb") as f:
+            return f.read()
+
+    def _write_file(p: Path, data: bytes):
+        with open(p, "wb") as f:
+            f.write(data)
+
+    original_bytes = await asyncio.to_thread(_read_file, audio_path)
+
+    processed_bytes, mime_type = await AudioProcessor.process_audio_async(
         wav_bytes=original_bytes,
         target_format=payload.format,
         bitrate=payload.bitrate,
@@ -71,8 +80,7 @@ async def export_audio(payload: ExportRequest, db=Depends(get_db)):
 
     export_path = settings.AUDIO_STORAGE_PATH / f"export_{clean_filename}"
 
-    with open(export_path, "wb") as f:
-        f.write(processed_bytes)
+    await asyncio.to_thread(_write_file, export_path, processed_bytes)
 
     saved_path = str(export_path)
 
@@ -82,8 +90,7 @@ async def export_audio(payload: ExportRequest, db=Depends(get_db)):
             expanded = Path(os.path.expanduser(payload.target_directory))
             expanded.mkdir(parents=True, exist_ok=True)
             custom_target_file = expanded / clean_filename
-            with open(custom_target_file, "wb") as f:
-                f.write(processed_bytes)
+            await asyncio.to_thread(_write_file, custom_target_file, processed_bytes)
             saved_path = str(custom_target_file)
         except Exception as e:
             print(f"[WARN] Failed to write directly to custom directory {payload.target_directory}: {e}")
@@ -128,13 +135,22 @@ async def trim_audio(payload: TrimRequest, db=Depends(get_db)):
     if not audio_path or not audio_path.exists():
         raise HTTPException(status_code=404, detail="Audio file not found for trimming.")
 
-    with open(audio_path, "rb") as f:
-        original_bytes = f.read()
+    import asyncio
+
+    def _read_file(p: Path) -> bytes:
+        with open(p, "rb") as f:
+            return f.read()
+
+    def _write_file(p: Path, data: bytes):
+        with open(p, "wb") as f:
+            f.write(data)
+
+    original_bytes = await asyncio.to_thread(_read_file, audio_path)
 
     start_ms = int(payload.start_time_sec * 1000)
     end_ms = int(payload.end_time_sec * 1000)
 
-    trimmed_bytes, new_duration_ms = AudioProcessor.trim_audio_segment(
+    trimmed_bytes, new_duration_ms = await AudioProcessor.trim_audio_segment_async(
         wav_bytes=original_bytes,
         start_ms=start_ms,
         end_ms=end_ms,
@@ -146,8 +162,7 @@ async def trim_audio(payload: TrimRequest, db=Depends(get_db)):
     trimmed_filename = f"trimmed_{audio_path.stem}_{new_gen_id}.wav"
     output_path = settings.AUDIO_STORAGE_PATH / trimmed_filename
 
-    with open(output_path, "wb") as f:
-        f.write(trimmed_bytes)
+    await asyncio.to_thread(_write_file, output_path, trimmed_bytes)
 
     if payload.save_as_new:
         try:

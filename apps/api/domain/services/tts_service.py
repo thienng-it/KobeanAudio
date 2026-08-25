@@ -161,8 +161,8 @@ class TTSService:
             raw_wav, sample_rate, _ = await engine.generate(request)
             model_used = engine.name
 
-        # Post-processing
-        processed_bytes, mime_type = AudioProcessor.process_audio(
+        # Non-blocking DSP post-processing
+        processed_bytes, mime_type = await AudioProcessor.process_audio_async(
             wav_bytes=raw_wav,
             target_format=request.output_format,
             sample_rate=request.sample_rate,
@@ -177,8 +177,12 @@ class TTSService:
         file_name = f"gen_{gen_id[:8]}_{request.engine.value}.{ext}"
         file_path = settings.AUDIO_STORAGE_PATH / file_name
 
-        with open(file_path, "wb") as f:
-            f.write(processed_bytes)
+        # Non-blocking async disk write
+        def _write_file(path: Path, data: bytes):
+            with open(path, "wb") as f:
+                f.write(data)
+
+        await asyncio.to_thread(_write_file, file_path, processed_bytes)
 
         duration_ms = AudioProcessor.calculate_duration_ms(raw_wav)
         file_size = len(processed_bytes)

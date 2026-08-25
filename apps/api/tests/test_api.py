@@ -47,6 +47,34 @@ async def test_health_check_endpoint():
         data = response.json()
         assert data["status"] == "healthy"
         assert data["enginesCount"] == 6
+        assert "environment" in data
+        assert "database" in data
+        assert data["database"]["status"] == "connected"
+        assert "X-Request-ID" in response.headers
+        assert "X-Process-Time-Ms" in response.headers
+
+
+@pytest.mark.asyncio
+async def test_liveness_probe_endpoint():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.get("/api/v1/health/liveness")
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_validation_error_handler_structure():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        # Send empty payload to trigger 422
+        response = await ac.post("/api/v1/projects", json={})
+        assert response.status_code == 422
+        data = response.json()
+        assert data["status"] == "error"
+        assert data["error_code"] == "VALIDATION_ERROR"
+        assert "request_id" in data
+
 
 
 @pytest.mark.asyncio

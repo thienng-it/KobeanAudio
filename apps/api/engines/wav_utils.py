@@ -29,14 +29,20 @@ def parse_audio_mime_type(mime_type: str) -> dict[str, int]:
 
 def convert_pcm_to_wav(audio_data: bytes, mime_type: str = "audio/L16;rate=24000") -> bytes:
     """
-    Generates a canonical WAV file header for raw PCM audio data.
+    Generates a canonical WAV file header for raw PCM audio data with sample alignment.
     """
     parameters = parse_audio_mime_type(mime_type)
     bits_per_sample = parameters["bits_per_sample"]
     sample_rate = parameters["rate"]
     num_channels = 1
+    bytes_per_sample = max(1, bits_per_sample // 8)
+
+    # Guarantee PCM word alignment (e.g. 16-bit PCM must be divisible by 2 bytes)
+    remainder = len(audio_data) % bytes_per_sample
+    if remainder != 0:
+        audio_data = audio_data + (b"\x00" * (bytes_per_sample - remainder))
+
     data_size = len(audio_data)
-    bytes_per_sample = bits_per_sample // 8
     block_align = num_channels * bytes_per_sample
     byte_rate = sample_rate * block_align
     chunk_size = 36 + data_size
