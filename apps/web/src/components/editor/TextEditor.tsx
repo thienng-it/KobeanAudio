@@ -362,9 +362,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
       : `${Math.floor(estSeconds / 60)}m ${estSeconds % 60}s`;
 
   return (
-    <div className="liquid-glass flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface)] text-[var(--text-main)]">
+    <div className="liquid-glass flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface)] text-[var(--text-main)]">
       {/* 1. Unified Minimalist Toolbar Row */}
-      <div className="flex flex-wrap items-center justify-between border-b border-[var(--glass-border)] bg-[var(--bg-surface)] px-3.5 py-2 gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-between border-b border-[var(--glass-border)] bg-[var(--bg-surface)] px-3.5 py-2 gap-2">
         {/* Left: Mode Segmented Pill */}
         <div className="flex items-center space-x-2">
           <div className="flex items-center rounded-lg bg-black/10 dark:bg-black/40 p-0.5 border border-[var(--glass-border)]">
@@ -567,7 +567,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
       </AnimatePresence>
 
       {/* 3. Main Script Canvas Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-16 space-y-3">
         {mode === "visual" ? (
           <>
             {/* Scene Context Accordion (Clean summary when collapsed) */}
@@ -738,7 +738,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
       </div>
 
       {/* 4. Bottom Status & Statistics Footer */}
-      <div className="flex items-center justify-between border-t border-[var(--glass-border)] bg-[var(--bg-surface)] px-4 py-2 text-xs">
+      <div className="flex shrink-0 items-center justify-between border-t border-[var(--glass-border)] bg-[var(--bg-surface)] px-4 py-2 text-xs">
         <div className="flex items-center space-x-3 text-[var(--text-muted)] text-[11px]">
           <span className="flex items-center space-x-1">
             <Type className="h-3 w-3" style={{ color: "var(--accent-primary)" }} />

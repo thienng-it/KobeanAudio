@@ -129,7 +129,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({ onOpenExport }
       </div>
 
       {/* Main Panel Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-24 space-y-4">
         {activeTab === "controls" ? (
           <>
             {/* Voice Timbre Card with Floating Popover */}
@@ -184,7 +184,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({ onOpenExport }
 
                     <motion.div
                       {...dropdownMotion}
-                      className="glass-popover absolute left-0 right-0 top-full mt-1.5 z-50 overflow-hidden rounded-2xl p-2.5"
+                      className="glass-popover absolute left-0 right-0 top-full mt-1.5 z-50 overflow-hidden rounded-2xl p-2.5 shadow-2xl"
                     >
                       <div className="relative mb-2">
                         <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[var(--text-faint)]" />
@@ -198,7 +198,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({ onOpenExport }
                         />
                       </div>
 
-                      <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                      <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
                         {filteredVoices.map((v) => {
                           const isSelected = v.id === selectedVoiceId;
                           return (
@@ -558,7 +558,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({ onOpenExport }
           </>
         ) : (
           /* Generation Takes History Tab */
-          <div className="space-y-2">
+          <div className="space-y-2 pb-24">
             <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
               <span>Project Takes ({generations.length})</span>
             </div>

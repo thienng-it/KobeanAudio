@@ -171,7 +171,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   return (
-    <div className="liquid-glass-dock flex h-20 sm:h-21 w-full items-center justify-between px-3 sm:px-5 gap-2 border-t border-[var(--glass-border)] shadow-2xl transition-all select-none overflow-hidden">
+    <div className="liquid-glass-dock relative flex h-20 sm:h-21 w-full items-center justify-between px-3 sm:px-5 gap-2 border-t border-[var(--glass-border)] shadow-2xl transition-all select-none overflow-visible">
       {/* Left: Primary Synthesize / Playback Action Button */}
       <div className="flex items-center space-x-2 shrink-0">
         <motion.button

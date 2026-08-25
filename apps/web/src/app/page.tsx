@@ -170,7 +170,7 @@ export default function StudioPage() {
       </div>
 
       {/* 1. macOS Window Header & Engine / Workspace Segmented Switcher */}
-      <div className="relative z-30">
+      <div className="relative z-30 shrink-0">
         <TopNav
           onOpenVoiceClone={() => setVoiceCloneOpen(true)}
           showInspector={showInspector}
@@ -183,10 +183,10 @@ export default function StudioPage() {
       </div>
 
       {/* 2. Main Studio Canvas / Tags Library Workspace */}
-      <div className="relative z-10 flex flex-1 overflow-hidden">
+      <div className="relative z-10 flex flex-1 min-h-0 overflow-hidden">
         {/* Studio Workspace Container */}
         <div
-          className={`flex-1 overflow-hidden ${
+          className={`flex-1 min-h-0 overflow-hidden ${
             activeTab === "studio" ? "flex" : "hidden"
           }`}
         >
@@ -198,7 +198,7 @@ export default function StudioPage() {
                 animate={{ width: 288, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={SPRINGS.popover}
-                className="h-full overflow-hidden shrink-0"
+                className="h-full min-h-0 overflow-hidden shrink-0"
               >
                 <AudioFilesSidebar
                   isOpen={isSidebarOpen}
@@ -213,7 +213,7 @@ export default function StudioPage() {
           </AnimatePresence>
 
           {/* Center: Distraction-free Script & Director Notes Canvas */}
-          <main className="flex flex-1 flex-col overflow-hidden p-3.5 sm:p-4">
+          <main className="flex flex-1 min-h-0 flex-col overflow-hidden p-3 sm:p-3.5">
             <TextEditor onOpenTagsLibrary={() => setActiveTab("tags")} />
           </main>
 
@@ -225,7 +225,7 @@ export default function StudioPage() {
                 animate={{ width: 330, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={SPRINGS.popover}
-                className="h-full overflow-hidden shrink-0"
+                className="h-full min-h-0 overflow-hidden shrink-0"
               >
                 <StudioInspector
                   onOpenExport={(genId) => {
@@ -240,7 +240,7 @@ export default function StudioPage() {
 
         {/* Tags & Emotions Library View Container */}
         <div
-          className={`flex-1 overflow-hidden ${
+          className={`flex-1 min-h-0 overflow-hidden ${
             activeTab === "tags" ? "flex" : "hidden"
           }`}
         >
@@ -270,7 +270,7 @@ export default function StudioPage() {
       </div>
 
       {/* 3. Floating Bottom Audio Master Transport Dock */}
-      <div className="relative z-30">
+      <div className="relative z-30 shrink-0">
         <AudioPlayer
           onOpenExport={() => {
             setSelectedExportGenId(activeProject?.id);
