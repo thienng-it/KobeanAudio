@@ -14,6 +14,7 @@ This directory acts as the permanent Git-versioned issue and architectural memor
 | `BEAD-004` | Scroll Container Bottom Cutoff | `StudioInspector.tsx`, `TextEditor.tsx` | `p-4` with default `pb-4` left zero breathing room | Use `pb-24` / `pb-16` on scroll containers | ✅ Resolved |
 | `BEAD-005` | Waveform Collapsing on Narrow Windows | `AudioPlayer.tsx` | Flex child had no `min-w` constraint | Add `min-w-[70px] sm:min-w-[130px]` | ✅ Resolved |
 | `BEAD-006` | TopNav Right Popover Offscreen Overflow | `EnginePicker.tsx` | `absolute left-0` expanded off the right edge | Use `absolute right-0 top-full` on right elements | ✅ Resolved |
+| `BEAD-007` | Minimum Desktop Window Sizing Bounds | `tauri.conf.json`, `page.tsx` | Desktop window allowed resizing too tight | Set `minWidth: 980` & `minHeight: 640` | ✅ Resolved |
 
 ---
 

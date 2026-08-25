@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "KobeanAudio Studio",
-        "width": 1280,
-        "height": 840,
-        "minWidth": 840,
-        "minHeight": 560,
+        "width": 1360,
+        "height": 880,
+        "minWidth": 980,
+        "minHeight": 640,
         "resizable": true,
         "fullscreen": false,
         "titleBarStyle": "Overlay",

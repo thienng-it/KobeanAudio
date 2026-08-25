@@ -55,3 +55,12 @@ This document serves as the **mandatory architectural memory** for all AI agents
 - **Root Cause**: In a flex row with buttons, `flex-1` waveform container without `min-w` shrinks to 0px.
 - **Rule**:
   - Waveform canvas container in `AudioPlayer.tsx` must always have `min-w-[70px] sm:min-w-[130px]`.
+
+---
+
+## 🖥️ 7. Minimum Desktop Window Size & Bounds (980x640)
+- **Symptom**: Resizing window smaller than 900px squashes studio panels and clips controls.
+- **Root Cause**: Unconstrained desktop window resize bounds in Tauri and CSS allowed squeezing the 3-column studio workstation beyond physical layout limits.
+- **Rule**:
+  - `tauri.conf.json` must enforce `minWidth: 980` and `minHeight: 640` (with default `1360x880`).
+  - `page.tsx` root container must enforce `min-w-[980px] min-h-[640px]`.

@@ -161,7 +161,7 @@ export default function StudioPage() {
   };
 
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-main)]">
+    <div className="relative flex h-screen w-screen min-w-[980px] min-h-[640px] flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-main)]">
       {/* Fluid Ambient Liquid Gradient Orbs for Authentic Liquid Glass Refraction */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-50 transition-opacity">
         <div className="orb-ambient-1 absolute -top-[15%] -left-[10%] h-[550px] w-[550px] rounded-full blur-[110px]" />
