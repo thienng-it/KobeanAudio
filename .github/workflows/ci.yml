@@ -22,7 +22,7 @@ jobs:
         run: |
           cd apps/api
           python -m pip install --upgrade pip
-          pip install fastapi uvicorn pydantic pydantic-settings aiosqlite python-multipart pydub soundfile numpy google-genai httpx sse-starlette pytest pytest-asyncio
+          pip install -e ".[dev]"
           brew install ffmpeg || true
 
 
