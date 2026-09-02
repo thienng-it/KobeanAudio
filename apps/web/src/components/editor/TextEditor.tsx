@@ -20,7 +20,11 @@ import {
   Clock,
   Type,
   FileText,
+  Upload,
+  Loader2,
+  FileUp,
 } from "lucide-react";
+import { ParseFileResponse, ParsedScriptBlock } from "@kobeanaudio/types";
 import { useProjectStore } from "@/stores/projectStore";
 import { useTagStore, StudioTag } from "@/stores/tagStore";
 import {
@@ -31,7 +35,8 @@ import {
   compileBlocksToRaw,
 } from "@/lib/templateAutoTagger";
 import { TagInsertionDialog } from "@/components/tags/TagInsertionDialog";
-import { generateAudio } from "@/lib/api";
+import { FileImportDialog } from "@/components/editor/FileImportDialog";
+import { generateAudio, parseDocumentFile } from "@/lib/api";
 import {
   dropdownMotion,
   buttonTapMotion,
@@ -97,6 +102,98 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
   const [autoTagSuccessNotice, setAutoTagSuccessNotice] = useState<string | null>(null);
   const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
   const templateRef = React.useRef<HTMLDivElement>(null);
+
+  // File Upload & Parse State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [parseResult, setParseResult] = useState<ParseFileResponse | null>(null);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [fileErrorNotice, setFileErrorNotice] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const processUploadedFile = async (file: File) => {
+    setIsParsingFile(true);
+    setFileErrorNotice(null);
+    try {
+      const result = await parseDocumentFile(file, {
+        detectSpeakers: true,
+        cleanWhitespace: true,
+      });
+      setParseResult(result);
+      setIsImportModalOpen(true);
+    } catch (err: any) {
+      console.error("Failed to parse file:", err);
+      setFileErrorNotice(err?.message || "Failed to parse document file.");
+      setTimeout(() => setFileErrorNotice(null), 5000);
+    } finally {
+      setIsParsingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDraggingFile(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFile(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFile(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processUploadedFile(file);
+    }
+  };
+
+  const handleImportConfirm = (data: {
+    rawText: string;
+    blocks: ParsedScriptBlock[];
+    importMode: "replace" | "append";
+  }) => {
+    if (data.importMode === "replace") {
+      setTextContent(data.rawText);
+      setBlocks(
+        data.blocks.map((b, idx) => ({
+          id: b.id || `imported-block-${Date.now()}-${idx}`,
+          speaker: b.speaker || "Narrator",
+          text: b.text,
+        }))
+      );
+    } else {
+      const combinedText = textContent ? `${textContent}\n\n${data.rawText}` : data.rawText;
+      setTextContent(combinedText);
+      setBlocks((prev) => [
+        ...prev,
+        ...data.blocks.map((b, idx) => ({
+          id: b.id || `imported-block-${Date.now()}-${idx}`,
+          speaker: b.speaker || "Narrator",
+          text: b.text,
+        })),
+      ]);
+    }
+    setAutoTagSuccessNotice(`Successfully imported ${data.blocks.length} block(s) from document!`);
+    setTimeout(() => setAutoTagSuccessNotice(null), 4000);
+  };
+
 
   // Tag Insertion & Audition Modal State
   const [selectedInsertTag, setSelectedInsertTag] = useState<StudioTag | null>(null);
@@ -362,7 +459,49 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
       : `${Math.floor(estSeconds / 60)}m ${estSeconds % 60}s`;
 
   return (
-    <div className="liquid-glass flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface)] text-[var(--text-main)]">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`liquid-glass relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border transition-all duration-200 ${
+        isDraggingFile
+          ? "border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/40 shadow-2xl scale-[0.998]"
+          : "border-[var(--glass-border)]"
+      } bg-[var(--bg-surface)] text-[var(--text-main)]`}
+    >
+      {/* Hidden File Input for Document Parsing */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.md,.pdf,.docx,.doc,.srt,.vtt"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+
+      {/* Drag-and-Drop Active Overlay */}
+      <AnimatePresence>
+        {isDraggingFile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[var(--bg-surface-elevated)]/90 backdrop-blur-md border-2 border-dashed border-[var(--accent-primary)] rounded-2xl pointer-events-none"
+          >
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="p-4 rounded-2xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 mb-3"
+            >
+              <FileUp className="w-8 h-8" />
+            </motion.div>
+            <h4 className="text-sm font-bold text-[var(--text-main)]">Drop document here to import</h4>
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Supports .txt, .md, .pdf, .docx, .srt, .vtt
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 1. Unified Minimalist Toolbar Row */}
       <div className="flex shrink-0 flex-wrap items-center justify-between border-b border-[var(--glass-border)] bg-[var(--bg-surface)] px-3.5 py-2 gap-2">
         {/* Left: Mode Segmented Pill */}
@@ -393,7 +532,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
           </div>
         </div>
 
-        {/* Center: Template & Auto-Tag */}
+        {/* Center: Template & Auto-Tag & Import File */}
         <div className="flex items-center space-x-2">
           {/* Custom Template Dropdown Popover */}
           <div ref={templateRef} className="relative shrink-0">
@@ -455,6 +594,24 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
             <Wand2 className="h-3 w-3" />
             <span className="hidden sm:inline">Auto-Tag</span>
           </motion.button>
+
+          {/* Import File Button */}
+          <motion.button
+            {...buttonSubtleTapMotion}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isParsingFile}
+            className="flex items-center space-x-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--bg-surface-elevated)] px-2.5 py-1 text-xs text-[var(--text-main)] shadow-sm backdrop-blur-md transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] cursor-pointer disabled:opacity-50"
+            title="Upload and extract text from .txt, .md, .pdf, .docx, .srt, .vtt"
+          >
+            {isParsingFile ? (
+              <Loader2 className="h-3 w-3 animate-spin text-[var(--accent-primary)]" />
+            ) : (
+              <Upload className="h-3 w-3 text-[var(--accent-primary)]" />
+            )}
+            <span className="font-medium text-[11px]">
+              {isParsingFile ? "Parsing..." : "Import File"}
+            </span>
+          </motion.button>
         </div>
 
         {/* Right: Tag Palette Toggle */}
@@ -479,6 +636,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
           </motion.button>
         </div>
       </div>
+
 
 
       {/* 2. Sleek Draggable Tags Drawer (Collapsible) */}
@@ -863,6 +1021,35 @@ export const TextEditor: React.FC<TextEditorProps> = ({ onOpenTagsLibrary }) => 
         isPlayingAudition={selectedInsertTag ? playingTagId === selectedInsertTag.id : false}
         isLoadingAudition={selectedInsertTag ? loadingTagId === selectedInsertTag.id : false}
       />
+
+      {/* Document File Import Preview Dialog */}
+      <FileImportDialog
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        parseResult={parseResult}
+        onImport={handleImportConfirm}
+      />
+
+      {/* File Parsing Error Notification */}
+      <AnimatePresence>
+        {fileErrorNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-rose-500/90 text-white text-xs font-medium shadow-lg backdrop-blur-md border border-rose-400/30 flex items-center gap-2"
+          >
+            <span>{fileErrorNotice}</span>
+            <button
+              onClick={() => setFileErrorNotice(null)}
+              className="text-white/80 hover:text-white ml-2"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
