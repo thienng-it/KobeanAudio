@@ -27,7 +27,10 @@ export async function fetchVoices(engine?: string): Promise<Voice[]> {
   return res.json();
 }
 
-export async function generateAudio(payload: TTSRequest): Promise<GenerationRecord> {
+export async function generateAudio(
+  payload: TTSRequest,
+  signal?: AbortSignal
+): Promise<GenerationRecord> {
   const snakePayload = {
     text: payload.text,
     engine: payload.engine,
@@ -50,6 +53,7 @@ export async function generateAudio(payload: TTSRequest): Promise<GenerationReco
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(snakePayload),
+    signal,
   });
 
   if (!res.ok) {
