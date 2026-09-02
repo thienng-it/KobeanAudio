@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.middleware.error_handler import register_error_handlers
 from api.middleware.logging_middleware import RequestTracingMiddleware
-from api.routes import clone, engines, export, generate, projects
+from api.routes import clone, engines, export, generate, parse, projects
 from config import settings
 from db.database import get_db, init_db
 from domain.services.tts_service import tts_service
@@ -56,6 +56,8 @@ app.include_router(generate.router)
 app.include_router(projects.router)
 app.include_router(export.router)
 app.include_router(clone.router)
+app.include_router(parse.router)
+
 
 
 @app.get("/api/v1/health")
