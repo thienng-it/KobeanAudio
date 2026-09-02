@@ -113,12 +113,51 @@ export default function StudioPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [textContent, activeEngine, selectedVoiceId, isGenerating]);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleStopGenerate = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    setIsGenerating(false);
+    setStreamProgress(null);
+  };
+
   const handleGenerate = async () => {
     if (!textContent.trim() || isGenerating) return;
 
+    // Reset abort controller
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setIsGenerating(true);
     setErrorMessage(null);
-    setStreamProgress({ percent: 15, message: "Synthesizing voice audio..." });
+    setStreamProgress({ percent: 15, message: "Connecting to neural speech engine..." });
+
+    // Simulate realistic progressive status while synthesis occurs
+    let progressVal = 15;
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(() => {
+      progressVal = Math.min(92, progressVal + Math.floor(Math.random() * 8) + 4);
+      const phaseMsg =
+        progressVal < 35
+          ? "Synthesizing acoustic features..."
+          : progressVal < 65
+          ? "Generating neural waveform..."
+          : progressVal < 85
+          ? "Applying broadcast LUFS normalization..."
+          : "Finalizing master audio take...";
+      setStreamProgress({ percent: progressVal, message: phaseMsg });
+    }, 450);
 
     try {
       const payload = {
@@ -136,7 +175,7 @@ export default function StudioPage() {
         projectId: activeProject?.id,
       };
 
-      const result = await generateAudio(payload);
+      const result = await generateAudio(payload, abortController.signal);
       const url = result.audio_url || result.audioUrl || null;
       setAudioUrl(url);
       setIsPlaying(true);
@@ -152,11 +191,20 @@ export default function StudioPage() {
       // Refresh real-time quota status and audio files list in background
       loadQuotaStatus();
       loadAudioFiles();
-      setStreamProgress(null);
     } catch (e: any) {
+      if (e?.name === "AbortError" || e?.message?.includes("aborted")) {
+        // Ignored gracefully on cancellation
+        return;
+      }
       setErrorMessage(e.message || "Failed to generate audio. Check local models or API key.");
     } finally {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
       setIsGenerating(false);
+      setStreamProgress(null);
+      abortControllerRef.current = null;
     }
   };
 
@@ -278,7 +326,9 @@ export default function StudioPage() {
           }}
           onOpenTrim={() => setTrimOpen(true)}
           onGenerate={handleGenerate}
+          onStop={handleStopGenerate}
           isGenerating={isGenerating}
+          progress={streamProgress}
           canGenerate={!!textContent.trim()}
         />
       </div>
