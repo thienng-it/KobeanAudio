@@ -18,6 +18,7 @@ graph TD
     TrimModal["AudioTrimDialog.tsx<br/><i>WaveSurfer Audition & DSP Slicing</i>"]
     ExportModal["ExportDialog.tsx<br/><i>DSP LUFS & Folder Picker Modal</i>"]
     CloneModal["VoiceCloneDialog.tsx<br/><i>Zero-Shot Voice Cloning</i>"]
+    ImportModal["FileImportDialog.tsx<br/><i>Doc Parser Preview & Speaker Sync</i>"]
     MotionEngine["motion.ts<br/><i>Unified Apple Spring Motion Engine</i>"]
   end
 
@@ -37,6 +38,7 @@ graph TD
     RouteProj["CRUD /api/v1/projects<br/><i>Workspace Database Manager</i>"]
     RouteEng["GET /api/v1/engines<br/><i>Capabilities & Quota Telemetry</i>"]
     RouteClone["POST /api/v1/clone-voice<br/><i>Reference Audio Processing</i>"]
+    RouteParse["POST /api/v1/parse-file<br/><i>PDF/DOCX/SRT Document Parser</i>"]
   end
 
   subgraph TTSEngines ["⚡ Multi-Engine TTS Layer"]
@@ -121,6 +123,8 @@ graph TD
 | **DSP** | `riff_packer.py` | `pack_riff_wav_header` | `struct`, Python stdlib | `audio_processor.py` |
 | **API** | `generate.py` | `POST /generate` | TTS Engines, `AudioProcessor` | `apps/web/lib/api.ts` |
 | **API** | `export.py` | `POST /export`, `/trim`, `/files` | `AudioProcessor`, `osascript` | `apps/web/lib/api.ts` |
+| **API** | `parse.py` | `POST /parse-file` | `document_parser.py` | `apps/web/lib/api.ts` (`parseDocumentFile`) |
+| **Service** | `document_parser.py` | `parse_document` | `pypdf`, `python-docx`, `re` | `parse.py` |
 | **Middleware** | `logging_middleware.py` | `RequestTracingMiddleware` | `time`, `uuid`, Starlette | `main.py` (`X-Request-ID`, `X-Process-Time-Ms`) |
 | **Middleware** | `error_handler.py` | `register_error_handlers` | FastAPI Exception Handlers | `main.py` (Standardized domain exceptions) |
 | **Motion** | `motion.ts` | `SPRINGS`, `dropdownMotion`, `modalMotion` | `framer-motion` | All UI Components & Modals |
@@ -130,7 +134,8 @@ graph TD
 | **Store** | `tagStore.ts` | `useTagStore` | LocalStorage, defaults | `TagsManagerPage`, `TextEditor` |
 | **Store** | `themeStore.ts` | `useThemeStore` | DOM `data-theme` | `TopNav`, `globals.css` |
 | **UI** | `TopNav.tsx` | `TopNav` | `useProjectStore`, `useEngineStore`, `useAudioFilesStore` | `StudioPage` (Native macOS insets, project selector, Live-Sync Refresh, More Actions `···` menu) |
-| **UI** | `TextEditor.tsx` | `TextEditor` | `useProjectStore`, `useTagStore`| `StudioPage` |
+| **UI** | `TextEditor.tsx` | `TextEditor` | `useProjectStore`, `useTagStore`, `FileImportDialog` | `StudioPage` |
+| **UI** | `FileImportDialog.tsx` | `FileImportDialog` | `api.ts`, `motion.ts` | `TextEditor` (Document preview, speaker block sync, stats) |
 | **UI** | `AudioPlayer.tsx` | `AudioPlayer` | `wavesurfer.js`, `usePlayerStore`| `StudioPage` (Audio DSP Tools popover, speed presets, volume slider, WaveSurfer) |
 | **UI** | `AudioTrimDialog.tsx` | `AudioTrimDialog` | `wavesurfer.js`, `export.py` | `StudioPage`, `AudioPlayer` (Direct DAW Waveform Trimming, In/Out drag handles, auto-snap silence) |
 | **UI** | `ExportDialog.tsx` | `ExportDialog` | `api.ts`, `useAudioFilesStore` | `StudioPage`, `AudioPlayer` |
