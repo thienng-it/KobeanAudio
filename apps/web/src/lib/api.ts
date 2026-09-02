@@ -4,6 +4,7 @@ import {
   EngineInfo,
   GenerationRecord,
   ModelQuotaInfo,
+  ParseFileResponse,
   Project,
   ProjectCreate,
   ProjectUpdate,
@@ -231,3 +232,29 @@ export async function checkEngineHealth(): Promise<{ models: Record<string, any>
     return { models: {}, overall_status: "ready" };
   }
 }
+
+export async function parseDocumentFile(
+  file: File,
+  options?: { detectSpeakers?: boolean; cleanWhitespace?: boolean }
+): Promise<ParseFileResponse> {
+  const detectSpeakers = options?.detectSpeakers ?? true;
+  const cleanWhitespace = options?.cleanWhitespace ?? true;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("detect_speakers", String(detectSpeakers));
+  formData.append("clean_whitespace", String(cleanWhitespace));
+
+  const res = await fetch(`${API_BASE}/parse-file`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to parse file (${file.name}) with status ${res.status}`);
+  }
+
+  return res.json();
+}
+
