@@ -1,5 +1,7 @@
-import pytest
 import struct
+
+import pytest
+
 from domain.services.audio_processor import AudioProcessor
 from engines.wav_utils import convert_pcm_to_wav
 
@@ -7,6 +9,7 @@ from engines.wav_utils import convert_pcm_to_wav
 def generate_sine_pcm(duration_sec: float = 0.5, sample_rate: int = 24000) -> bytes:
     """Generates synthetic 16-bit PCM mono audio data."""
     import math
+
     num_samples = int(duration_sec * sample_rate)
     samples = []
     for i in range(num_samples):
@@ -37,6 +40,7 @@ async def test_audio_processor_process_async_wav():
 @pytest.mark.asyncio
 async def test_audio_processor_process_async_mp3():
     import shutil
+
     raw_pcm = generate_sine_pcm(duration_sec=0.5, sample_rate=24000)
     wav_bytes = convert_pcm_to_wav(raw_pcm, "audio/L16;rate=24000")
 

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator
+
 from domain.models import EngineType, TTSRequest, Voice
 
 
@@ -21,12 +22,10 @@ class TTSEngine(ABC):
     @abstractmethod
     async def initialize(self) -> None:
         """Load or verify engine models/dependencies."""
-        pass
 
     @abstractmethod
     async def generate_stream(self, request: TTSRequest) -> AsyncIterator[RawAudioChunk]:
         """Stream raw audio chunks."""
-        pass
 
     @abstractmethod
     async def generate(self, request: TTSRequest) -> tuple[bytes, int, str]:
@@ -34,18 +33,15 @@ class TTSEngine(ABC):
         Generate complete audio.
         Returns (audio_bytes, sample_rate, mime_type).
         """
-        pass
 
     @abstractmethod
     def get_voices(self) -> list[Voice]:
         """Return list of available voices."""
-        pass
 
     @abstractmethod
     def is_available(self) -> tuple[bool, str]:
         """Check if engine is ready to use. Returns (is_ready, status_message)."""
-        pass
 
     async def shutdown(self) -> None:
         """Clean up resources if needed."""
-        pass
+        return None

@@ -1,6 +1,8 @@
 import json
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
+
 from db.database import get_db
 from domain.models import (
     GenerationResponse,
@@ -16,7 +18,9 @@ router = APIRouter(prefix="/api/v1/projects", tags=["Projects"])
 async def create_project(payload: ProjectCreate, db=Depends(get_db)):
     proj_id = str(uuid.uuid4())
     settings_str = json.dumps(payload.settings)
-    gemini_model_str = payload.gemini_model.value if payload.gemini_model else "gemini-3.1-flash-tts-preview"
+    gemini_model_str = (
+        payload.gemini_model.value if payload.gemini_model else "gemini-3.1-flash-tts-preview"
+    )
 
     await db.execute(
         """
@@ -36,7 +40,9 @@ async def create_project(payload: ProjectCreate, db=Depends(get_db)):
     )
     await db.commit()
 
-    cursor = await db.execute("SELECT created_at, updated_at FROM projects WHERE id = ?", (proj_id,))
+    cursor = await db.execute(
+        "SELECT created_at, updated_at FROM projects WHERE id = ?", (proj_id,)
+    )
     row = await cursor.fetchone()
 
     return ProjectResponse(
@@ -86,13 +92,16 @@ async def list_projects(db=Depends(get_db)):
 
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: str, db=Depends(get_db)):
-    cursor = await db.execute("""
+    cursor = await db.execute(
+        """
         SELECT p.*, COUNT(g.id) as generations_count
         FROM projects p
         LEFT JOIN generations g ON p.id = g.project_id
         WHERE p.id = ?
         GROUP BY p.id
-    """, (project_id,))
+    """,
+        (project_id,),
+    )
     r = await cursor.fetchone()
     if not r:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -124,14 +133,21 @@ async def update_project(project_id: str, payload: ProjectUpdate, db=Depends(get
     text = payload.text_content if payload.text_content is not None else existing["text_content"]
     engine = payload.engine.value if payload.engine is not None else existing["engine"]
     voice = payload.voice_id if payload.voice_id is not None else existing["voice_id"]
-    gemini_model = payload.gemini_model.value if payload.gemini_model is not None else existing["gemini_model"]
-    settings_str = json.dumps(payload.settings) if payload.settings is not None else existing["settings"]
+    gemini_model = (
+        payload.gemini_model.value if payload.gemini_model is not None else existing["gemini_model"]
+    )
+    settings_str = (
+        json.dumps(payload.settings) if payload.settings is not None else existing["settings"]
+    )
 
-    await db.execute("""
+    await db.execute(
+        """
         UPDATE projects
         SET name = ?, description = ?, text_content = ?, engine = ?, voice_id = ?, gemini_model = ?, settings = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-    """, (name, desc, text, engine, voice, gemini_model, settings_str, project_id))
+    """,
+        (name, desc, text, engine, voice, gemini_model, settings_str, project_id),
+    )
     await db.commit()
 
     return await get_project(project_id, db)
@@ -146,9 +162,12 @@ async def delete_project(project_id: str, db=Depends(get_db)):
 
 @router.get("/{project_id}/generations", response_model=list[GenerationResponse])
 async def list_project_generations(project_id: str, db=Depends(get_db)):
-    cursor = await db.execute("""
+    cursor = await db.execute(
+        """
         SELECT * FROM generations WHERE project_id = ? ORDER BY created_at DESC
-    """, (project_id,))
+    """,
+        (project_id,),
+    )
     rows = await cursor.fetchall()
     return [
         GenerationResponse(

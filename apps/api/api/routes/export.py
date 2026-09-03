@@ -1,14 +1,16 @@
 import os
-import uuid
 import subprocess
-from datetime import datetime
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
-from pydantic import BaseModel
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from config import settings
 from db.database import get_db
 from domain.models import ExportRequest, TrimRequest
 from domain.services.audio_processor import AudioProcessor
-from config import settings
 
 router = APIRouter(prefix="/api/v1/export", tags=["Export"])
 
@@ -27,32 +29,38 @@ async def export_audio(payload: ExportRequest, db=Depends(get_db)):
     audio_path = None
 
     if payload.generation_id and payload.generation_id != "latest":
-        cursor = await db.execute("SELECT * FROM generations WHERE id = ?", (payload.generation_id,))
+        cursor = await db.execute(
+            "SELECT * FROM generations WHERE id = ?", (payload.generation_id,)
+        )
         row = await cursor.fetchone()
         if row and row["audio_path"] and Path(row["audio_path"]).exists():
             audio_path = Path(row["audio_path"])
 
-    if not audio_path or not audio_path.exists():
+    if (not audio_path or not audio_path.exists()) and payload.generation_id:
         # Try matching by filename in audio_output directory
-        if payload.generation_id:
-            cleaned_id = payload.generation_id.split("/")[-1]
-            candidate = settings.AUDIO_STORAGE_PATH / cleaned_id
-            if candidate.exists():
-                audio_path = candidate
-            else:
-                matches = list(settings.AUDIO_STORAGE_PATH.glob(f"*{cleaned_id}*"))
-                if matches:
-                    audio_path = matches[0]
+        cleaned_id = payload.generation_id.split("/")[-1]
+        candidate = settings.AUDIO_STORAGE_PATH / cleaned_id
+        if candidate.exists():
+            audio_path = candidate
+        else:
+            matches = list(settings.AUDIO_STORAGE_PATH.glob(f"*{cleaned_id}*"))
+            if matches:
+                audio_path = matches[0]
 
     # Fallback to the latest synthesized audio master on disk
     if not audio_path or not audio_path.exists():
-        wav_files = [f for f in settings.AUDIO_STORAGE_PATH.glob("*.wav") if not f.name.startswith("export_")]
+        wav_files = [
+            f for f in settings.AUDIO_STORAGE_PATH.glob("*.wav") if not f.name.startswith("export_")
+        ]
         if wav_files:
             wav_files.sort(key=os.path.getmtime, reverse=True)
             audio_path = wav_files[0]
 
     if not audio_path or not audio_path.exists():
-        raise HTTPException(status_code=404, detail="No audio available for export. Please generate a voice take first.")
+        raise HTTPException(
+            status_code=404,
+            detail="No audio available for export. Please generate a voice take first.",
+        )
 
     import asyncio
 
@@ -66,7 +74,7 @@ async def export_audio(payload: ExportRequest, db=Depends(get_db)):
 
     original_bytes = await asyncio.to_thread(_read_file, audio_path)
 
-    processed_bytes, mime_type = await AudioProcessor.process_audio_async(
+    processed_bytes, _mime_type = await AudioProcessor.process_audio_async(
         wav_bytes=original_bytes,
         target_format=payload.format,
         bitrate=payload.bitrate,
@@ -93,7 +101,9 @@ async def export_audio(payload: ExportRequest, db=Depends(get_db)):
             await asyncio.to_thread(_write_file, custom_target_file, processed_bytes)
             saved_path = str(custom_target_file)
         except Exception as e:
-            print(f"[WARN] Failed to write directly to custom directory {payload.target_directory}: {e}")
+            print(
+                f"[WARN] Failed to write directly to custom directory {payload.target_directory}: {e}"
+            )
 
     return {
         "status": "ready",
@@ -113,21 +123,24 @@ async def trim_audio(payload: TrimRequest, db=Depends(get_db)):
     audio_path = None
 
     if payload.generation_id and payload.generation_id != "latest":
-        cursor = await db.execute("SELECT * FROM generations WHERE id = ?", (payload.generation_id,))
+        cursor = await db.execute(
+            "SELECT * FROM generations WHERE id = ?", (payload.generation_id,)
+        )
         row = await cursor.fetchone()
         if row and row["audio_path"] and Path(row["audio_path"]).exists():
             audio_path = Path(row["audio_path"])
 
-    if not audio_path or not audio_path.exists():
-        if payload.audio_url:
-            filename = payload.audio_url.split("/")[-1].split("?")[0]
-            candidate = settings.AUDIO_STORAGE_PATH / filename
-            if candidate.exists():
-                audio_path = candidate
+    if (not audio_path or not audio_path.exists()) and payload.audio_url:
+        filename = payload.audio_url.split("/")[-1].split("?")[0]
+        candidate = settings.AUDIO_STORAGE_PATH / filename
+        if candidate.exists():
+            audio_path = candidate
 
     # Fallback to the latest synthesized audio master on disk
     if not audio_path or not audio_path.exists():
-        wav_files = [f for f in settings.AUDIO_STORAGE_PATH.glob("*.wav") if not f.name.startswith("export_")]
+        wav_files = [
+            f for f in settings.AUDIO_STORAGE_PATH.glob("*.wav") if not f.name.startswith("export_")
+        ]
         if wav_files:
             wav_files.sort(key=os.path.getmtime, reverse=True)
             audio_path = wav_files[0]
@@ -166,8 +179,7 @@ async def trim_audio(payload: TrimRequest, db=Depends(get_db)):
 
     if payload.save_as_new:
         try:
-            from datetime import timezone
-            created_at = datetime.now(timezone.utc).isoformat()
+            created_at = datetime.now(UTC).isoformat()
             await db.execute(
                 """
                 INSERT INTO generations (id, project_id, text_input, engine, voice_id, gemini_model, settings, audio_path, audio_url, duration_ms, file_size, rating, created_at, model_used, was_cascaded, cascade_reason)
@@ -209,7 +221,6 @@ async def trim_audio(payload: TrimRequest, db=Depends(get_db)):
 
 
 @router.get("/files")
-
 async def list_audio_files(db=Depends(get_db)):
     """
     Lists all audio files in the studio audio_output directory.
@@ -222,19 +233,23 @@ async def list_audio_files(db=Depends(get_db)):
             if file_path.is_file() and file_path.suffix.lower() in supported_exts:
                 stat = file_path.stat()
                 is_export = file_path.name.startswith("export_")
-                display_name = file_path.name.replace("export_", "") if is_export else file_path.name
+                display_name = (
+                    file_path.name.replace("export_", "") if is_export else file_path.name
+                )
 
-                files_list.append({
-                    "id": file_path.name,
-                    "name": display_name,
-                    "filename": file_path.name,
-                    "path": str(file_path.absolute()),
-                    "size_bytes": stat.st_size,
-                    "format": file_path.suffix.lower().replace(".", ""),
-                    "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    "is_export": is_export,
-                    "audio_url": f"/audio/{file_path.name}",
-                })
+                files_list.append(
+                    {
+                        "id": file_path.name,
+                        "name": display_name,
+                        "filename": file_path.name,
+                        "path": str(file_path.absolute()),
+                        "size_bytes": stat.st_size,
+                        "format": file_path.suffix.lower().replace(".", ""),
+                        "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        "is_export": is_export,
+                        "audio_url": f"/audio/{file_path.name}",
+                    }
+                )
 
     # Sort newest first
     files_list.sort(key=lambda x: x["created_at"], reverse=True)
@@ -275,7 +290,7 @@ async def reveal_in_finder(payload: RevealRequest):
             subprocess.run(["open", str(target_path.absolute())], check=True)
         return {"status": "revealed", "path": str(target_path.absolute())}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to open in Finder: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to open in Finder: {e}") from e
 
 
 @router.post("/pick-folder")
@@ -284,15 +299,15 @@ async def pick_folder():
     Opens native macOS folder picker dialog safely without crashing on cancel.
     """
     script = (
-        'try\n'
+        "try\n"
         '  tell application "System Events" to activate\n'
         '  set theFolder to POSIX path of (choose folder with prompt "Select KobeanAudio Export Destination:")\n'
-        '  return theFolder\n'
-        'on error number -128\n'
+        "  return theFolder\n"
+        "on error number -128\n"
         '  return "CANCELED"\n'
-        'on error errStr\n'
+        "on error errStr\n"
         '  return "CANCELED"\n'
-        'end try'
+        "end try"
     )
     try:
         res = subprocess.run(

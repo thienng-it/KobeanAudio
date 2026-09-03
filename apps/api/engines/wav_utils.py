@@ -1,3 +1,4 @@
+import contextlib
 import struct
 
 
@@ -13,16 +14,12 @@ def parse_audio_mime_type(mime_type: str) -> dict[str, int]:
     for param in parts:
         param = param.strip()
         if param.lower().startswith("rate="):
-            try:
+            with contextlib.suppress(ValueError, IndexError):
                 rate_str = param.split("=", 1)[1]
                 rate = int(rate_str)
-            except (ValueError, IndexError):
-                pass
         elif param.startswith("audio/L"):
-            try:
+            with contextlib.suppress(ValueError, IndexError):
                 bits_per_sample = int(param.split("L", 1)[1])
-            except (ValueError, IndexError):
-                pass
 
     return {"bits_per_sample": bits_per_sample, "rate": rate}
 
@@ -49,18 +46,18 @@ def convert_pcm_to_wav(audio_data: bytes, mime_type: str = "audio/L16;rate=24000
 
     header = struct.pack(
         "<4sI4s4sIHHIIHH4sI",
-        b"RIFF",          # ChunkID
-        chunk_size,       # ChunkSize
-        b"WAVE",          # Format
-        b"fmt ",          # Subchunk1ID
-        16,               # Subchunk1Size (16 for PCM)
-        1,                # AudioFormat (1 for PCM)
-        num_channels,     # NumChannels
-        sample_rate,      # SampleRate
-        byte_rate,        # ByteRate
-        block_align,      # BlockAlign
+        b"RIFF",  # ChunkID
+        chunk_size,  # ChunkSize
+        b"WAVE",  # Format
+        b"fmt ",  # Subchunk1ID
+        16,  # Subchunk1Size (16 for PCM)
+        1,  # AudioFormat (1 for PCM)
+        num_channels,  # NumChannels
+        sample_rate,  # SampleRate
+        byte_rate,  # ByteRate
+        block_align,  # BlockAlign
         bits_per_sample,  # BitsPerSample
-        b"data",          # Subchunk2ID
-        data_size         # Subchunk2Size
+        b"data",  # Subchunk2ID
+        data_size,  # Subchunk2Size
     )
     return header + audio_data

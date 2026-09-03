@@ -1,8 +1,8 @@
-import os
 import platform
 import shutil
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -19,7 +19,9 @@ async def lifespan(app: FastAPI):
     # Startup
     await init_db()
     await tts_service.initialize()
-    print(f"✅ {settings.APP_NAME} v{settings.APP_VERSION} initialized on {settings.API_HOST}:{settings.API_PORT}")
+    print(
+        f"✅ {settings.APP_NAME} v{settings.APP_VERSION} initialized on {settings.API_HOST}:{settings.API_PORT}"
+    )
     yield
     # Shutdown
     print(f"🛑 {settings.APP_NAME} shutting down...")
@@ -57,7 +59,6 @@ app.include_router(projects.router)
 app.include_router(export.router)
 app.include_router(clone.router)
 app.include_router(parse.router)
-
 
 
 @app.get("/api/v1/health")
@@ -123,4 +124,5 @@ async def liveness_probe():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host=settings.API_HOST, port=settings.API_PORT, reload=settings.DEBUG)

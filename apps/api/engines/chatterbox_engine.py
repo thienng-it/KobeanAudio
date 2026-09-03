@@ -1,5 +1,4 @@
-import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from domain.models import EngineType, TTSRequest, Voice
 from engines.base import RawAudioChunk, TTSEngine
@@ -9,7 +8,9 @@ from engines.neural_synth import stream_neural_speech, synthesize_neural_speech
 class ChatterboxEngine(TTSEngine):
     engine_type = EngineType.CHATTERBOX
     name = "Chatterbox (Zero-Shot Voice Cloning · MIT)"
-    description = "State-of-the-art voice cloning from 5s audio sample with emotion exaggeration slider"
+    description = (
+        "State-of-the-art voice cloning from 5s audio sample with emotion exaggeration slider"
+    )
 
     def __init__(self):
         self._cloned_voices: list[Voice] = []

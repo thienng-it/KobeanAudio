@@ -27,6 +27,12 @@ jobs:
 
 
 
+      - name: Run Ruff PEP 8 Lint & Format Check
+        run: |
+          cd apps/api
+          ruff check .
+          ruff format --check .
+
       - name: Run Backend Tests
         run: |
           cd apps/api

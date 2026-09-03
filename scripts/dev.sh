@@ -11,9 +11,16 @@ kill -9 $(lsof -ti:3001) 2>/dev/null || true
 
 echo "🚀 Starting KobeanAudio Unified Backend..."
 source apps/api/.venv/bin/activate 2>/dev/null || true
-(cd apps/api && python3 -m uvicorn main:app --host 127.0.0.1 --port 8000) &
-API_PID=$!
-cd ../..
+(cd apps/api && .venv/bin/python3 -m uvicorn main:app --host 127.0.0.1 --port 8000) &
+# Wait for API backend to be ready
+echo "⏳ Waiting for API backend to be ready on http://127.0.0.1:8000..."
+for i in {1..20}; do
+  if curl -s http://127.0.0.1:8000/api/v1/engines >/dev/null 2>&1; then
+    echo "✅ Backend is healthy and responding!"
+    break
+  fi
+  sleep 0.4
+done
 
 echo "🌐 Starting KobeanAudio Next.js Studio on http://localhost:3001..."
 pnpm --filter @kobeanaudio/web dev &

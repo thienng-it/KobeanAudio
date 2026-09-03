@@ -1,12 +1,14 @@
 import asyncio
+import contextlib
 import io
 import os
 import re
-import shutil
 import subprocess
 import tempfile
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+
 import pydub
+
 from engines.base import RawAudioChunk
 from engines.wav_utils import convert_pcm_to_wav
 
@@ -152,10 +154,8 @@ def _generate_macos_say(text: str) -> bytes:
         return convert_pcm_to_wav(b"\x00" * 48000, "audio/L16;rate=24000")
     finally:
         if os.path.exists(tmp_path):
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(tmp_path)
-            except OSError:
-                pass
 
 
 async def synthesize_neural_speech(

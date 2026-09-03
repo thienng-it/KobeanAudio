@@ -1,5 +1,4 @@
-import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from domain.models import EngineType, TTSRequest, Voice
 from engines.base import RawAudioChunk, TTSEngine
@@ -7,7 +6,12 @@ from engines.neural_synth import stream_neural_speech, synthesize_neural_speech
 
 ORPHEUS_VOICES = [
     ("orpheus_default", "male", "en-us", "Llama-3 powered expressive narrator with natural pauses"),
-    ("orpheus_expressive", "female", "en-us", "Emotional, dynamic speech LLM voice with laughter support"),
+    (
+        "orpheus_expressive",
+        "female",
+        "en-us",
+        "Emotional, dynamic speech LLM voice with laughter support",
+    ),
 ]
 
 

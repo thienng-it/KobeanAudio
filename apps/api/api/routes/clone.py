@@ -1,6 +1,7 @@
 import uuid
-from pathlib import Path
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+
 from config import settings
 from db.database import get_db
 from domain.models import EngineType, Voice
@@ -18,9 +19,12 @@ async def upload_or_record_voice(
 ):
     voice_id = f"cloned_{str(uuid.uuid4())[:8]}"
     content = await audio_file.read()
-    
+
     if len(content) < 1000:
-        raise HTTPException(status_code=400, detail="Audio sample is too short. Please provide at least 3-5 seconds of speech.")
+        raise HTTPException(
+            status_code=400,
+            detail="Audio sample is too short. Please provide at least 3-5 seconds of speech.",
+        )
 
     save_path = settings.AUDIO_STORAGE_PATH / f"{voice_id}_ref.wav"
     with open(save_path, "wb") as f:

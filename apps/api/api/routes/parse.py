@@ -1,4 +1,5 @@
 import logging
+
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
 from domain.models import ParseFileResponse
@@ -48,10 +49,10 @@ async def parse_file(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     except Exception as e:
         logger.exception("Failed to parse file %s: %s", filename, str(e))
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Could not parse document: {str(e)}",
-        )
+            detail=f"Could not parse document: {e!s}",
+        ) from e

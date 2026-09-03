@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
-from domain.models import EngineInfo, EngineType, QuotaStatusResponse, Voice
+
+from domain.models import EngineInfo, EngineType, Voice
 from domain.services.tts_service import tts_service
 
 router = APIRouter(prefix="/api/v1", tags=["Engines & Voices"])
@@ -12,7 +13,9 @@ async def list_engines():
 
 
 @router.get("/voices", response_model=list[Voice])
-async def list_voices(engine: EngineType | None = Query(None, description="Filter voices by engine")):
+async def list_voices(
+    engine: EngineType | None = Query(None, description="Filter voices by engine"),
+):
     """List all voices across all engines or for a specific engine."""
     return tts_service.get_all_voices(engine)
 
@@ -23,7 +26,7 @@ async def get_engine_voices(engine_type: EngineType):
     try:
         return tts_service.get_all_voices(engine_type)
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.get("/engines/quota-status")
@@ -44,7 +47,7 @@ async def check_engine_health():
     gemini_engine = tts_service.engines.get(EngineType.GEMINI)
     if not gemini_engine or not hasattr(gemini_engine, "check_live_health"):
         return {"models": {}, "overall_status": "ready"}
-    
+
     health_status = await gemini_engine.check_live_health()
     return {
         "models": health_status,

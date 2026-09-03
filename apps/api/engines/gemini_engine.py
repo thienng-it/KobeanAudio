@@ -1,18 +1,14 @@
 import asyncio
-import io
 import os
 import re
-import time
+from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import AsyncIterator
-from google import genai
-from google.genai import types
 
 from config import settings
 from domain.models import EngineType, GeminiModelVariant, TTSRequest, Voice
 from engines.base import RawAudioChunk, TTSEngine
-from engines.wav_utils import convert_pcm_to_wav
 from engines.neural_synth import stream_neural_speech, synthesize_neural_speech
+from engines.wav_utils import convert_pcm_to_wav
 
 GEMINI_VOICES = [
     ("Achernar", "female", "Clear, poised, standard English narration"),
@@ -49,9 +45,9 @@ GEMINI_VOICES = [
 
 # Prioritized cascade pool for maximum stability & quota resilience
 GEMINI_FALLBACK_CHAIN = [
-    GeminiModelVariant.FLASH_2_5.value,       # Most stable, high throughput
-    GeminiModelVariant.FLASH_3_1.value,       # Flagship 3.1 Preview
-    GeminiModelVariant.PRO_2_5.value,         # Studio HD Pro
+    GeminiModelVariant.FLASH_2_5.value,  # Most stable, high throughput
+    GeminiModelVariant.FLASH_3_1.value,  # Flagship 3.1 Preview
+    GeminiModelVariant.PRO_2_5.value,  # Studio HD Pro
 ]
 
 
@@ -61,7 +57,7 @@ class GeminiEngine(TTSEngine):
     description = "Cloud-powered SOTA Speech LLM with director's notes & 200+ expressive tags"
 
     def __init__(self):
-        self._client: genai.Client | None = None
+        self._client = None
         self._quota_status: dict[str, dict] = {
             GeminiModelVariant.FLASH_2_5.value: {
                 "model_id": GeminiModelVariant.FLASH_2_5.value,
@@ -92,11 +88,13 @@ class GeminiEngine(TTSEngine):
             },
         }
 
-    def _get_client(self) -> genai.Client | None:
+    def _get_client(self):
         api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return None
         if self._client is None:
+            from google import genai
+
             self._client = genai.Client(api_key=api_key)
         return self._client
 
@@ -134,21 +132,27 @@ class GeminiEngine(TTSEngine):
         if not client:
             return self._quota_status
 
+        from google.genai import types
+
         for model_id in GEMINI_FALLBACK_CHAIN:
             try:
-                def _probe():
+
+                def _probe(target_model=model_id):
                     return client.models.generate_content(
-                        model=model_id,
+                        model=target_model,
                         contents="Kobean",
                         config=types.GenerateContentConfig(
                             response_modalities=["audio"],
                             speech_config=types.SpeechConfig(
                                 voice_config=types.VoiceConfig(
-                                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Puck")
+                                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                        voice_name="Puck"
+                                    )
                                 )
                             ),
                         ),
                     )
+
                 await asyncio.to_thread(_probe)
                 self._quota_status[model_id] = {
                     "model_id": model_id,
@@ -199,6 +203,8 @@ class GeminiEngine(TTSEngine):
         if not client:
             raise ValueError("No Gemini API Key available")
 
+        from google.genai import types
+
         formatted_text = self._format_prompt_for_voice(text, voice_name)
         contents = [
             types.Content(
@@ -212,9 +218,7 @@ class GeminiEngine(TTSEngine):
             response_modalities=["audio"],
             speech_config=types.SpeechConfig(
                 voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                        voice_name=voice_name
-                    )
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice_name)
                 )
             ),
         )
@@ -315,14 +319,16 @@ class GeminiEngine(TTSEngine):
             return wav_bytes, sr, mime, "Studio Neural Local", True, "No Gemini API Key provided"
 
         # Build prioritized fallback cascade: requested model first, then remaining stable pool
-        user_choice = request.gemini_model.value if request.gemini_model else GEMINI_FALLBACK_CHAIN[0]
+        user_choice = (
+            request.gemini_model.value if request.gemini_model else GEMINI_FALLBACK_CHAIN[0]
+        )
         models_to_try = [user_choice]
         for candidate in GEMINI_FALLBACK_CHAIN:
             if candidate not in models_to_try:
                 models_to_try.append(candidate)
 
         last_error = None
-        for idx, model_name in enumerate(models_to_try):
+        for _idx, model_name in enumerate(models_to_try):
             try:
                 wav_bytes, sr, mime = await self._call_gemini_api(
                     text=request.text,
@@ -330,7 +336,7 @@ class GeminiEngine(TTSEngine):
                     model_name=model_name,
                     temperature=request.temperature,
                 )
-                
+
                 # Mark model as healthy
                 self._quota_status[model_name] = {
                     "model_id": model_name,
@@ -342,15 +348,21 @@ class GeminiEngine(TTSEngine):
                     "retry_after": None,
                 }
 
-                was_cascaded = (model_name != user_choice)
-                cascade_reason = f"Requested {user_choice} was rate/quota limited; smoothly generated via {model_name}" if was_cascaded else None
+                was_cascaded = model_name != user_choice
+                cascade_reason = (
+                    f"Requested {user_choice} was rate/quota limited; smoothly generated via {model_name}"
+                    if was_cascaded
+                    else None
+                )
                 return wav_bytes, sr, mime, model_name, was_cascaded, cascade_reason
 
             except Exception as e:
                 last_error = e
                 err_str = str(e)
                 if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                    print(f"[WARN] Gemini model {model_name} quota exceeded (429), recording status and cascading...")
+                    print(
+                        f"[WARN] Gemini model {model_name} quota exceeded (429), recording status and cascading..."
+                    )
                     self._quota_status[model_name] = {
                         "model_id": model_name,
                         "name": model_name,
@@ -363,7 +375,9 @@ class GeminiEngine(TTSEngine):
                 else:
                     print(f"[WARN] Gemini model {model_name} failed: {e}, cascading...")
 
-        print(f"[WARN] All Google Gemini models unavailable ({last_error}), routing to Studio Neural...")
+        print(
+            f"[WARN] All Google Gemini models unavailable ({last_error}), routing to Studio Neural..."
+        )
         wav_bytes, sr, mime = await synthesize_neural_speech(
             text=request.text,
             voice_id=request.voice_id,
@@ -371,4 +385,11 @@ class GeminiEngine(TTSEngine):
             pitch=request.pitch,
             sample_rate=24000,
         )
-        return wav_bytes, sr, mime, "Studio Neural Local", True, f"All cloud models exhausted: {last_error}"
+        return (
+            wav_bytes,
+            sr,
+            mime,
+            "Studio Neural Local",
+            True,
+            f"All cloud models exhausted: {last_error}",
+        )

@@ -1,14 +1,10 @@
 import asyncio
-import base64
 import json
 import uuid
 from pathlib import Path
-from typing import AsyncIterator
 
 from config import settings
-from db.database import get_db
 from domain.models import (
-    AudioChunk,
     EngineInfo,
     EngineType,
     GenerationResponse,
@@ -16,7 +12,7 @@ from domain.models import (
     Voice,
 )
 from domain.services.audio_processor import AudioProcessor
-from engines.base import RawAudioChunk, TTSEngine
+from engines.base import TTSEngine
 from engines.chatterbox_engine import ChatterboxEngine
 from engines.gemini_engine import GeminiEngine
 from engines.kokoro_engine import KokoroEngine
@@ -116,7 +112,7 @@ class TTSService:
         result = []
         for eng_type, eng_instance in self.engines.items():
             conf = engine_configs.get(eng_type, {})
-            is_ready, status_msg = eng_instance.is_available()
+            is_ready, _status_msg = eng_instance.is_available()
             voices = eng_instance.get_voices()
 
             result.append(
@@ -140,7 +136,7 @@ class TTSService:
         if engine_type:
             engine = self.get_engine(engine_type)
             return engine.get_voices()
-        
+
         all_voices = []
         for engine in self.engines.values():
             all_voices.extend(engine.get_voices())
@@ -148,21 +144,26 @@ class TTSService:
 
     async def generate_and_save(self, request: TTSRequest, db) -> GenerationResponse:
         engine = self.get_engine(request.engine)
-        
+
         model_used = None
         was_cascaded = False
         cascade_reason = None
 
         if hasattr(engine, "generate_with_telemetry"):
-            raw_wav, sample_rate, _, model_used, was_cascaded, cascade_reason = (
-                await engine.generate_with_telemetry(request)
-            )
+            (
+                raw_wav,
+                _sample_rate,
+                _,
+                model_used,
+                was_cascaded,
+                cascade_reason,
+            ) = await engine.generate_with_telemetry(request)
         else:
-            raw_wav, sample_rate, _ = await engine.generate(request)
+            raw_wav, _sample_rate, _ = await engine.generate(request)
             model_used = engine.name
 
         # Non-blocking DSP post-processing
-        processed_bytes, mime_type = await AudioProcessor.process_audio_async(
+        processed_bytes, _mime_type = await AudioProcessor.process_audio_async(
             wav_bytes=raw_wav,
             target_format=request.output_format,
             sample_rate=request.sample_rate,

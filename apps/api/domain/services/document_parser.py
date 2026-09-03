@@ -1,8 +1,5 @@
 import io
 import re
-from typing import List, Tuple
-import pypdf
-import docx
 
 from domain.models import ParsedBlock, ParseFileResponse
 
@@ -16,17 +13,17 @@ def clean_text_whitespace(text: str) -> str:
     return cleaned.strip()
 
 
-def parse_srt_vtt(content: str) -> Tuple[str, List[ParsedBlock]]:
+def parse_srt_vtt(content: str) -> tuple[str, list[ParsedBlock]]:
     """Parse SRT or WebVTT subtitle text and extract clean dialogue blocks."""
     # Strip WEBVTT header or metadata
     lines = content.splitlines()
     cleaned_lines = []
-    
+
     # Regex to identify timecodes: 00:00:01,000 --> 00:00:04,000 or 00:01.000 --> 00:04.000
     timecode_pattern = re.compile(
         r"(\d{1,2}:)?\d{2}:\d{2}[,\.]\d{3}\s*-->\s*(\d{1,2}:)?\d{2}:\d{2}[,\.]\d{3}"
     )
-    
+
     for line in lines:
         stripped = line.strip()
         if not stripped:
@@ -48,7 +45,7 @@ def parse_srt_vtt(content: str) -> Tuple[str, List[ParsedBlock]]:
     return raw_text, blocks
 
 
-def extract_dialogue_blocks(text: str) -> List[ParsedBlock]:
+def extract_dialogue_blocks(text: str) -> list[ParsedBlock]:
     """
     Extract structured speaker blocks from text.
     Detects patterns like:
@@ -62,10 +59,10 @@ def extract_dialogue_blocks(text: str) -> List[ParsedBlock]:
 
     speaker_colon_pattern = re.compile(r"^([A-Za-z0-9_\-\s]{2,25}):\s*(.+)$")
     bracket_pattern = re.compile(r"^\[([A-Za-z0-9_\-\s]{2,25})\]\s*(.+)$")
-    
-    blocks: List[ParsedBlock] = []
+
+    blocks: list[ParsedBlock] = []
     current_speaker = "Narrator"
-    current_lines: List[str] = []
+    current_lines: list[str] = []
 
     for line in lines:
         match_colon = speaker_colon_pattern.match(line)
@@ -94,6 +91,10 @@ def extract_dialogue_blocks(text: str) -> List[ParsedBlock]:
 
 def parse_pdf_bytes(data: bytes) -> str:
     """Extract text from PDF byte content using pypdf."""
+    try:
+        import pypdf
+    except ImportError:
+        raise ValueError("PDF parsing requires pypdf. Run: pip install pypdf") from None
     reader = pypdf.PdfReader(io.BytesIO(data))
     page_texts = []
     for page in reader.pages:
@@ -105,6 +106,12 @@ def parse_pdf_bytes(data: bytes) -> str:
 
 def parse_docx_bytes(data: bytes) -> str:
     """Extract paragraphs and text from DOCX byte content."""
+    try:
+        import docx
+    except ImportError:
+        raise ValueError(
+            "DOCX parsing requires python-docx. Run: pip install python-docx"
+        ) from None
     doc = docx.Document(io.BytesIO(data))
     paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
     return "\n\n".join(paragraphs)
@@ -123,7 +130,7 @@ def parse_document(
     ext = filename.split(".")[-1].lower() if "." in filename else ""
 
     raw_text = ""
-    blocks: List[ParsedBlock] = []
+    blocks: list[ParsedBlock] = []
 
     if ext in ["txt", "md"]:
         for encoding in ["utf-8", "utf-8-sig", "latin-1", "cp1252"]:
@@ -152,7 +159,9 @@ def parse_document(
         raw_text, blocks = parse_srt_vtt(text_str)
 
     else:
-        raise ValueError(f"Unsupported file format: .{ext}. Allowed formats: .txt, .md, .pdf, .docx, .srt, .vtt")
+        raise ValueError(
+            f"Unsupported file format: .{ext}. Allowed formats: .txt, .md, .pdf, .docx, .srt, .vtt"
+        )
 
     if clean_whitespace:
         raw_text = clean_text_whitespace(raw_text)

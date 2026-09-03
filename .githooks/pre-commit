@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔍 [pre-commit] Checking Python PEP 8 compliance with Ruff..."
+
+if command -v uvx >/dev/null 2>&1; then
+    uvx ruff check apps/api
+    uvx ruff format --check apps/api
+elif command -v uv >/dev/null 2>&1; then
+    (cd apps/api && uv run ruff check . && uv run ruff format --check .)
+elif [ -x apps/api/.venv/bin/ruff ]; then
+    apps/api/.venv/bin/ruff check apps/api
+    apps/api/.venv/bin/ruff format --check apps/api
+elif command -v ruff >/dev/null 2>&1; then
+    ruff check apps/api
+    ruff format --check apps/api
+else
+    echo "⚠️ Ruff linter not found in PATH or venv. Please install ruff."
+fi
+
+echo "✅ [pre-commit] Python PEP 8 checks passed successfully!"

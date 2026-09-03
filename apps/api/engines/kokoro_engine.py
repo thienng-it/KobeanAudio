@@ -1,15 +1,18 @@
 import asyncio
 import io
-import os
 import re
-from pathlib import Path
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+
 import soundfile as sf
 
 from config import settings
 from domain.models import EngineType, TTSRequest, Voice
 from engines.base import RawAudioChunk, TTSEngine
-from engines.neural_synth import clean_script_for_tts, stream_neural_speech, synthesize_neural_speech
+from engines.neural_synth import (
+    clean_script_for_tts,
+    stream_neural_speech,
+    synthesize_neural_speech,
+)
 
 KOKORO_VOICES = [
     ("af_heart", "female", "en-us", "Warm, natural, soothing female voice (Top rated)"),
@@ -54,13 +57,7 @@ class KokoroEngine(TTSEngine):
         self._voices_path = settings.BASE_DIR / "models" / "kokoro" / "voices-v1.0.bin"
 
     async def initialize(self) -> None:
-        if self._model is None and self._model_path.exists() and self._voices_path.exists():
-            try:
-                from kokoro_onnx import Kokoro
-                self._model = Kokoro(str(self._model_path), str(self._voices_path))
-                print("✅ Kokoro-82M native ONNX model loaded successfully on Apple Silicon!")
-            except Exception as e:
-                print(f"[WARN] Failed to load native Kokoro model: {e}")
+        pass
 
     def is_available(self) -> tuple[bool, str]:
         if self._model_path.exists() and self._voices_path.exists():
@@ -82,11 +79,11 @@ class KokoroEngine(TTSEngine):
         ]
 
     def _determine_language(self, voice_id: str) -> str:
-        if voice_id.startswith("bf_") or voice_id.startswith("bm_"):
+        if voice_id.startswith(("bf_", "bm_")):
             return "en-gb"
-        if voice_id.startswith("jf_") or voice_id.startswith("jm_"):
+        if voice_id.startswith(("jf_", "jm_")):
             return "ja"
-        if voice_id.startswith("zf_") or voice_id.startswith("zm_"):
+        if voice_id.startswith(("zf_", "zm_")):
             return "zh"
         if voice_id.startswith("ff_"):
             return "fr"
@@ -101,6 +98,7 @@ class KokoroEngine(TTSEngine):
         def _sync_create():
             if self._model is None:
                 from kokoro_onnx import Kokoro
+
                 self._model = Kokoro(str(self._model_path), str(self._voices_path))
             samples, sr = self._model.create(
                 clean_text,

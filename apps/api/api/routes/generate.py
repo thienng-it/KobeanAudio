@@ -1,6 +1,6 @@
-import asyncio
 import base64
 import json
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sse_starlette.sse import EventSourceResponse
 
@@ -20,7 +20,7 @@ async def generate_audio(request: TTSRequest, db=Depends(get_db)):
         result = await tts_service.generate_and_save(request, db)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/generate/stream")
@@ -68,7 +68,9 @@ async def generate_audio_stream(request: TTSRequest, req: Request):
                 percent = min(95, 10 + chunk_count * 15)
                 yield {
                     "event": "progress",
-                    "data": json.dumps({"percent": percent, "message": f"Generated chunk {chunk_count}..."}),
+                    "data": json.dumps(
+                        {"percent": percent, "message": f"Generated chunk {chunk_count}..."}
+                    ),
                 }
 
             # Completion event

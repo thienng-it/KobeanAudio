@@ -10,8 +10,12 @@
     "desktop": "bash scripts/desktop.sh",
     "tauri": "pnpm --filter @kobeanaudio/desktop tauri",
     "build": "pnpm --filter @kobeanaudio/web build",
-    "lint": "pnpm --filter @kobeanaudio/web lint && cd apps/api && uv run ruff check .",
-    "test": "pnpm --filter @kobeanaudio/web test && cd apps/api && source .venv/bin/activate && python3 -m pytest"
+    "lint": "pnpm --filter @kobeanaudio/web lint && uvx ruff check apps/api",
+    "lint:fix": "pnpm --filter @kobeanaudio/web lint --fix && uvx ruff check --fix apps/api && uvx ruff format apps/api",
+    "format": "prettier --write . && uvx ruff format apps/api",
+    "format:check": "uvx ruff format --check apps/api",
+    "test": "pnpm --filter @kobeanaudio/web test && cd apps/api && source .venv/bin/activate && python3 -m pytest",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "devDependencies": {
     "prettier": "^3.5.0",

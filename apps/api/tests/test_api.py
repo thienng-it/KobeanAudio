@@ -1,17 +1,15 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
-import struct
 
-from main import app
 from db.database import init_db
-from engines.wav_utils import convert_pcm_to_wav, parse_audio_mime_type
 from domain.services.audio_processor import AudioProcessor
+from engines.wav_utils import convert_pcm_to_wav, parse_audio_mime_type
+from main import app
 
 
 @pytest.fixture(autouse=True)
 async def setup_database():
     await init_db()
-
 
 
 def test_parse_audio_mime_type():
@@ -74,7 +72,6 @@ async def test_validation_error_handler_structure():
         assert data["status"] == "error"
         assert data["error_code"] == "VALIDATION_ERROR"
         assert "request_id" in data
-
 
 
 @pytest.mark.asyncio
@@ -185,4 +182,3 @@ async def test_local_generation_endpoint():
         assert trim_data["status"] == "success"
         assert trim_data["audioUrl"].startswith("/audio/")
         assert trim_data["durationMs"] > 0
-

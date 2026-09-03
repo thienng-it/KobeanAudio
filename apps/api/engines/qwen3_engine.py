@@ -1,5 +1,4 @@
-import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from domain.models import EngineType, TTSRequest, Voice
 from engines.base import RawAudioChunk, TTSEngine

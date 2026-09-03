@@ -32,3 +32,18 @@ KobeanAudio's backend is built with **FastAPI**, **Python 3.12+**, **Pydantic v2
 
 - **`AudioProcessor.trim_audio_segment()`**: Slices WAV buffers between `start_ms` and `end_ms` with configurable anti-click `fade_in_ms` and `fade_out_ms`.
 - **Endpoint `POST /api/v1/export/trim`**: Persists the sliced take to `audio_output/` and registers a generation history record in SQLite when `save_as_new=True`.
+
+---
+
+## 4. PEP 8 Standards, Ruff Linting & Pre-Commit Hooks
+
+- **PEP 8 Compliance**: All Python code in `apps/api/` must strictly adhere to PEP 8 conventions.
+- **Linter & Formatter**: Powered by **Ruff** (configured in `apps/api/pyproject.toml` targeting `py312` with line length `100`, rules `E, W, F, I, UP, B, C4, SIM`).
+- **Pre-Commit Enforcement**: `.githooks/pre-commit` runs on every git commit, blocking any commit if PEP 8 or formatting issues are found.
+- **Commands**:
+  - `pnpm lint`: Runs Next.js ESLint and Python Ruff lint check.
+  - `pnpm lint:fix`: Auto-fixes all linting issues across the monorepo.
+  - `pnpm format`: Formats web code with Prettier and Python with Ruff.
+  - `pnpm format:check`: Checks formatting without modifying files.
+  - `uvx ruff check apps/api`: Direct Python lint check.
+  - `uvx ruff format apps/api`: Direct Python formatter.

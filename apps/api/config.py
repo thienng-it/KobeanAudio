@@ -1,16 +1,17 @@
-import os
 from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_ENV = ROOT_DIR / ".env"
+
 
 class Settings(BaseSettings):
     # App
     APP_NAME: str = "KobeanAudio API"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
-    
+
     # Network
     API_HOST: str = "127.0.0.1"
     API_PORT: int = 8000

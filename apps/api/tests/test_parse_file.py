@@ -1,12 +1,13 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
-from main import app
+
 from domain.services.document_parser import (
     clean_text_whitespace,
     extract_dialogue_blocks,
     parse_document,
     parse_srt_vtt,
 )
+from main import app
 
 
 def test_clean_text_whitespace():
@@ -77,7 +78,7 @@ async def test_parse_file_endpoint():
         file_content = b"Narrator: Testing endpoint parsing.\nHost: Success!"
         files = {"file": ("script.txt", file_content, "text/plain")}
         response = await client.post("/api/v1/parse-file", files=files)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["filename"] == "script.txt"

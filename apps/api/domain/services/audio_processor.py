@@ -1,9 +1,6 @@
 import io
-import os
-import shutil
+
 import soundfile as sf
-import numpy as np
-from pathlib import Path
 from pydub import AudioSegment
 from pydub.effects import normalize
 
@@ -12,11 +9,10 @@ class AudioProcessor:
     @staticmethod
     def calculate_duration_ms(wav_bytes: bytes) -> int:
         try:
-            with io.BytesIO(wav_bytes) as f:
-                with sf.SoundFile(f) as sound_file:
-                    frames = len(sound_file)
-                    sample_rate = sound_file.samplerate
-                    return int((frames / sample_rate) * 1000)
+            with io.BytesIO(wav_bytes) as f, sf.SoundFile(f) as sound_file:
+                frames = len(sound_file)
+                sample_rate = sound_file.samplerate
+                return int((frames / sample_rate) * 1000)
         except Exception:
             # Fallback estimation
             return max(500, len(wav_bytes) // 48)
@@ -59,16 +55,16 @@ class AudioProcessor:
                 silence_threshold = -40.0
                 start_trim = 0
                 end_trim = len(audio)
-                
+
                 # Check start
                 for i in range(0, min(1000, len(audio)), 50):
-                    if audio[i:i+50].dBFS > silence_threshold:
+                    if audio[i : i + 50].dBFS > silence_threshold:
                         start_trim = max(0, i - 50)
                         break
 
                 # Check end
                 for i in range(len(audio), max(0, len(audio) - 1000), -50):
-                    if audio[max(0, i-50):i].dBFS > silence_threshold:
+                    if audio[max(0, i - 50) : i].dBFS > silence_threshold:
                         end_trim = min(len(audio), i + 50)
                         break
 
@@ -158,6 +154,7 @@ class AudioProcessor:
         Non-blocking async wrapper that executes CPU-bound audio processing inside a worker thread.
         """
         import asyncio
+
         return await asyncio.to_thread(
             cls.process_audio,
             wav_bytes=wav_bytes,
@@ -183,6 +180,7 @@ class AudioProcessor:
         Non-blocking async wrapper that executes audio segment slicing inside a worker thread.
         """
         import asyncio
+
         return await asyncio.to_thread(
             cls.trim_audio_segment,
             wav_bytes=wav_bytes,
@@ -191,5 +189,3 @@ class AudioProcessor:
             fade_in_ms=fade_in_ms,
             fade_out_ms=fade_out_ms,
         )
-
-

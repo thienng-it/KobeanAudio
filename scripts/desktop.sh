@@ -11,13 +11,20 @@ kill -9 $(lsof -ti:3001) 2>/dev/null || true
 
 echo "🚀 [1/2] Starting KobeanAudio Studio Backend on http://127.0.0.1:8000..."
 source apps/api/.venv/bin/activate 2>/dev/null || true
-(cd apps/api && python3 -m uvicorn main:app --host 127.0.0.1 --port 8000) &
+(cd apps/api && .venv/bin/python3 -m uvicorn main:app --host 127.0.0.1 --port 8000) &
 BACKEND_PID=$!
 
 trap "kill -9 $BACKEND_PID 2>/dev/null; exit 0" SIGINT SIGTERM EXIT
 
-# Wait a moment for API backend to boot
-sleep 1.2
+# Wait for API backend to be ready
+echo "⏳ Waiting for API backend to be ready on http://127.0.0.1:8000..."
+for i in {1..20}; do
+  if curl -s http://127.0.0.1:8000/api/v1/engines >/dev/null 2>&1; then
+    echo "✅ Backend is healthy and responding!"
+    break
+  fi
+  sleep 0.4
+done
 
 echo "🖥️ [2/2] Launching KobeanAudio Native macOS Desktop App (Tauri 2.x)..."
 pnpm --filter @kobeanaudio/desktop tauri dev
