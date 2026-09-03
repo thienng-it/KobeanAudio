@@ -221,3 +221,20 @@ export interface TrimAudioResult {
   savedPath: string;
 }
 
+export interface ParsedScriptBlock {
+  id?: string;
+  speaker: string;
+  text: string;
+}
+
+export interface ParseFileResponse {
+  filename: string;
+  file_type: string;
+  raw_text: string;
+  blocks: ParsedScriptBlock[];
+  word_count: number;
+  char_count: number;
+  estimated_duration_sec: number;
+}
+
+

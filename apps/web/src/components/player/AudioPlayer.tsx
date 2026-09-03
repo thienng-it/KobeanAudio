@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   Sliders,
   Settings2,
+  Square,
 } from "lucide-react";
 import { usePlayerStore } from "@/stores/playerStore";
 import { dropdownMotion, buttonTapMotion, buttonSubtleTapMotion } from "@/lib/motion";
@@ -27,7 +28,9 @@ interface AudioPlayerProps {
   onOpenExport: () => void;
   onOpenTrim?: () => void;
   onGenerate: () => void;
+  onStop?: () => void;
   isGenerating: boolean;
+  progress?: { percent: number; message: string } | null;
   canGenerate: boolean;
 }
 
@@ -35,7 +38,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onOpenExport,
   onOpenTrim,
   onGenerate,
+  onStop,
   isGenerating,
+  progress,
   canGenerate,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -172,36 +177,39 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   return (
     <div className="liquid-glass-dock relative flex h-20 sm:h-21 w-full items-center justify-between px-3 sm:px-5 gap-2 border-t border-[var(--glass-border)] shadow-2xl transition-all select-none overflow-visible">
-      {/* Left: Primary Synthesize / Playback Action Button */}
+      {/* Left: Primary Synthesize / Stop Action Button */}
       <div className="flex items-center space-x-2 shrink-0">
-        <motion.button
-          {...buttonTapMotion}
-          onClick={onGenerate}
-          disabled={isGenerating || !canGenerate}
-          className="relative flex items-center space-x-2 rounded-xl border border-white/20 px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs font-semibold text-white shadow-xl backdrop-blur-xl transition hover:opacity-90 disabled:opacity-30 cursor-pointer shrink-0"
-          style={{
-            backgroundImage: canGenerate && !isGenerating ? "var(--accent-gradient)" : undefined,
-            boxShadow: canGenerate && !isGenerating ? "0 0 20px var(--accent-glow)" : undefined,
-            backgroundColor: !canGenerate || isGenerating ? "rgba(255,255,255,0.08)" : undefined,
-          }}
-        >
-          {isGenerating ? (
-            <>
-              <SpinnerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-white shrink-0" />
-              <span className="hidden sm:inline whitespace-nowrap">Synthesizing...</span>
-              <span className="sm:hidden text-[11px] whitespace-nowrap">...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white shrink-0" />
-              <span className="hidden sm:inline whitespace-nowrap">Generate Audio</span>
-              <span className="sm:hidden text-[11px] whitespace-nowrap">Generate</span>
-              <kbd className="hidden lg:inline rounded bg-black/25 px-1.5 py-0.5 font-mono text-[9px] text-white/80">
-                ⌘↵
-              </kbd>
-            </>
-          )}
-        </motion.button>
+        {isGenerating ? (
+          <motion.button
+            {...buttonTapMotion}
+            onClick={onStop}
+            className="relative flex items-center space-x-1.5 sm:space-x-2 rounded-xl border border-rose-500/50 bg-rose-500/20 px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs font-semibold text-rose-300 shadow-xl shadow-rose-950/40 backdrop-blur-xl transition hover:bg-rose-500/30 hover:border-rose-400 hover:text-white cursor-pointer shrink-0"
+            title="Cancel / Stop audio synthesis"
+          >
+            <Square className="h-3.5 w-3.5 fill-current text-rose-400 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">Stop Synthesis</span>
+            <span className="sm:hidden text-[11px] whitespace-nowrap">Stop</span>
+          </motion.button>
+        ) : (
+          <motion.button
+            {...buttonTapMotion}
+            onClick={onGenerate}
+            disabled={!canGenerate}
+            className="relative flex items-center space-x-2 rounded-xl border border-white/20 px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs font-semibold text-white shadow-xl backdrop-blur-xl transition hover:opacity-90 disabled:opacity-30 cursor-pointer shrink-0"
+            style={{
+              backgroundImage: canGenerate ? "var(--accent-gradient)" : undefined,
+              boxShadow: canGenerate ? "0 0 20px var(--accent-glow)" : undefined,
+              backgroundColor: !canGenerate ? "rgba(255,255,255,0.08)" : undefined,
+            }}
+          >
+            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">Generate Audio</span>
+            <span className="sm:hidden text-[11px] whitespace-nowrap">Generate</span>
+            <kbd className="hidden lg:inline rounded bg-black/25 px-1.5 py-0.5 font-mono text-[9px] text-white/80">
+              ⌘↵
+            </kbd>
+          </motion.button>
+        )}
 
         {/* Live Audio Equalizer Meter */}
         <div className="hidden lg:flex items-center space-x-1 h-5 px-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
@@ -295,14 +303,33 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             </div>
           )}
 
-          {/* Generating Shimmer Indicator */}
+          {/* Generating Interactive Progress Bar */}
           {isGenerating && (
-            <div className="absolute inset-0 flex items-center justify-center space-x-1.5 bg-[var(--accent-primary)]/10 text-[10px] sm:text-xs text-[var(--accent-primary)] font-medium animate-pulse px-2 overflow-hidden pointer-events-none select-none">
-              <SpinnerIcon className="h-3.5 w-3.5 animate-spin shrink-0" />
-              <span className="truncate whitespace-nowrap">Synthesizing audio...</span>
+            <div className="absolute inset-0 z-20 flex flex-col justify-center px-3 sm:px-4 bg-[var(--bg-surface-elevated)]/90 backdrop-blur-md pointer-events-none select-none">
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-medium text-[var(--accent-primary)] mb-1 px-0.5">
+                <span className="flex items-center gap-1.5 truncate">
+                  <SpinnerIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin shrink-0" />
+                  <span className="truncate">{progress?.message || "Synthesizing voice audio..."}</span>
+                </span>
+                <span className="font-mono font-bold shrink-0 ml-2">
+                  {Math.round(progress?.percent || 20)}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 sm:h-2 rounded-full bg-white/10 overflow-hidden relative border border-white/[0.06]">
+                <motion.div
+                  initial={{ width: "12%" }}
+                  animate={{ width: `${progress?.percent || 20}%` }}
+                  transition={{ ease: "easeOut", duration: 0.35 }}
+                  className="h-full rounded-full shadow-sm shadow-[var(--accent-primary)]/50"
+                  style={{
+                    backgroundImage: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))",
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
+
 
         {/* High-Precision Studio Timecode */}
         <div className="font-mono text-[10px] sm:text-xs shrink-0 text-right space-x-0.5 whitespace-nowrap">

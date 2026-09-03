@@ -169,3 +169,19 @@ class TrimRequest(BaseModel):
     save_as_new: bool = Field(True, validation_alias=AliasChoices("save_as_new", "saveAsNew"))
     project_id: str | None = Field(None, validation_alias=AliasChoices("project_id", "projectId"))
 
+
+class ParsedBlock(BaseModel):
+    speaker: str = "Narrator"
+    text: str
+
+
+class ParseFileResponse(BaseModel):
+    filename: str
+    file_type: str
+    raw_text: str
+    blocks: list[ParsedBlock]
+    word_count: int
+    char_count: int
+    estimated_duration_sec: float
+
+
